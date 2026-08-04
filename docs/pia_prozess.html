@@ -1,0 +1,1384 @@
+
+<title>K&F PIA M – Prozessdurchlauf Odoo 19</title>
+<style>
+  /* ── Tokens ── */
+  :root {
+    --bg:       #F7F6F3;
+    --bg2:      #EDECEA;
+    --surface:  #FFFFFF;
+    --border:   #D8D5CE;
+    --text:     #1A1916;
+    --text-2:   #4A4742;
+    --text-3:   #7A7570;
+    --blue:     #1B4F8A;
+    --blue-lt:  #E8EFF8;
+    --blue-mid: #2E6DB4;
+    --amber:    #C4590E;
+    --amber-lt: #FBF0E8;
+    --green:    #1A6B3A;
+    --green-lt: #E8F4EE;
+    --code-bg:  #EFF2F7;
+    --step-sz:  2.8rem;
+    --radius:   6px;
+    --shadow:   0 1px 4px rgba(0,0,0,.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:       #111109;
+      --bg2:      #191815;
+      --surface:  #1E1C18;
+      --border:   #2D2B25;
+      --text:     #E6E2DA;
+      --text-2:   #AAA59C;
+      --text-3:   #706B62;
+      --blue:     #4A8ED6;
+      --blue-lt:  #0F1E33;
+      --blue-mid: #5A9EE6;
+      --amber:    #D4703A;
+      --amber-lt: #2A1508;
+      --green:    #3AAA6A;
+      --green-lt: #0A1F12;
+      --code-bg:  #18222F;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:#111109;--bg2:#191815;--surface:#1E1C18;--border:#2D2B25;
+    --text:#E6E2DA;--text-2:#AAA59C;--text-3:#706B62;
+    --blue:#4A8ED6;--blue-lt:#0F1E33;--blue-mid:#5A9EE6;
+    --amber:#D4703A;--amber-lt:#2A1508;--green:#3AAA6A;--green-lt:#0A1F12;
+    --code-bg:#18222F;
+  }
+  :root[data-theme="light"] {
+    --bg:#F7F6F3;--bg2:#EDECEA;--surface:#FFFFFF;--border:#D8D5CE;
+    --text:#1A1916;--text-2:#4A4742;--text-3:#7A7570;
+    --blue:#1B4F8A;--blue-lt:#E8EFF8;--blue-mid:#2E6DB4;
+    --amber:#C4590E;--amber-lt:#FBF0E8;--green:#1A6B3A;--green-lt:#E8F4EE;
+    --code-bg:#EFF2F7;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+    background: var(--bg);
+    color: var(--text);
+    padding-bottom: 6rem;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    background: var(--blue);
+    color: #fff;
+    padding: .75rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  }
+  .topbar-brand { font-size: .78rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; opacity: .7; }
+  .topbar-title { font-size: 1rem; font-weight: 700; }
+  .topbar-meta { font-size: .78rem; opacity: .65; white-space: nowrap; }
+  .theme-toggle {
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.25);
+    color: #fff;
+    border-radius: 4px;
+    padding: .25rem .6rem;
+    cursor: pointer;
+    font-size: .78rem;
+    flex-shrink: 0;
+  }
+  .theme-toggle:hover { background: rgba(255,255,255,.25); }
+
+  /* ── Process ribbon ── */
+  .ribbon-wrap { background: var(--bg2); border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .ribbon {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: .85rem 2rem;
+    width: max-content;
+    min-width: 100%;
+  }
+  .ribbon-step {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--text-3);
+    text-decoration: none;
+    white-space: nowrap;
+    padding: .25rem .5rem;
+    border-radius: 4px;
+    transition: color .15s, background .15s;
+  }
+  .ribbon-step:hover { color: var(--blue); background: var(--blue-lt); }
+  .ribbon-step .n {
+    width: 18px; height: 18px;
+    background: var(--border);
+    color: var(--text-2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .68rem;
+    flex-shrink: 0;
+    transition: background .15s, color .15s;
+  }
+  .ribbon-step:hover .n { background: var(--blue); color: #fff; }
+  .ribbon-arrow { color: var(--border); margin: 0 .1rem; font-size: .85rem; flex-shrink: 0; }
+
+  /* ── Main layout ── */
+  .main { max-width: 860px; margin: 0 auto; padding: 2.5rem 2rem 0; }
+
+  /* ── Phase headers ── */
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 2.5rem 0 1.5rem;
+    padding-bottom: .75rem;
+    border-bottom: 2px solid var(--blue);
+  }
+  .phase-label {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--blue);
+    letter-spacing: -.01em;
+  }
+  .phase-badge {
+    background: var(--blue);
+    color: #fff;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    padding: .2rem .55rem;
+    border-radius: 3px;
+  }
+  .phase-desc { font-size: .85rem; color: var(--text-2); margin-top: .2rem; }
+
+  /* ── Step cards ── */
+  .step {
+    display: grid;
+    grid-template-columns: var(--step-sz) 1fr;
+    gap: 0 1.5rem;
+    margin-bottom: 2rem;
+    position: relative;
+  }
+  .step::before {
+    content: "";
+    position: absolute;
+    left: calc(var(--step-sz) / 2);
+    top: var(--step-sz);
+    bottom: calc(-2rem);
+    width: 2px;
+    background: var(--border);
+    transform: translateX(-50%);
+  }
+  .step:last-child::before { display: none; }
+
+  .step-num {
+    width: var(--step-sz);
+    height: var(--step-sz);
+    border-radius: 50%;
+    background: var(--blue);
+    color: #fff;
+    font-size: 1.15rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(27,79,138,.35);
+    font-variant-numeric: tabular-nums;
+  }
+  .step-num.setup {
+    background: var(--text-3);
+    box-shadow: none;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .step-body { padding-top: .35rem; }
+  .step-title {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: .2rem;
+  }
+  .step-subtitle {
+    font-size: .78rem;
+    color: var(--text-3);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: .75rem;
+  }
+  .step-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  /* ── Card sections ── */
+  .card-section { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); }
+  .card-section:last-child { border-bottom: none; }
+  .card-section-label {
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--text-3);
+    margin-bottom: .6rem;
+  }
+
+  /* ── Navigation path ── */
+  .nav-path {
+    font-family: "SF Mono", "Cascadia Code", Consolas, monospace;
+    font-size: .8rem;
+    color: var(--blue-mid);
+    background: var(--blue-lt);
+    padding: .35rem .6rem;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: .5rem;
+    word-break: break-all;
+  }
+
+  /* ── Action list ── */
+  .actions { list-style: none; }
+  .actions > li {
+    display: flex;
+    gap: .6rem;
+    padding: .3rem 0;
+    font-size: .9rem;
+    align-items: flex-start;
+    border-bottom: 1px solid var(--border);
+  }
+  .actions > li:last-child { border-bottom: none; }
+  .actions > li::before {
+    content: "\25B8";
+    color: var(--blue);
+    font-size: .75rem;
+    flex-shrink: 0;
+    margin-top: .18rem;
+  }
+
+  /* ── Field table ── */
+  .field-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  .field-table th {
+    text-align: left;
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--text-3);
+    padding: .35rem .5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .field-table td { padding: .4rem .5rem; vertical-align: top; }
+  .field-table tr + tr td { border-top: 1px solid var(--border); }
+  .field-table tr:hover td { background: var(--bg); }
+
+  /* ── Inline code / field chips ── */
+  code, .field {
+    font-family: "SF Mono", "Cascadia Code", Consolas, monospace;
+    font-size: .82em;
+    background: var(--code-bg);
+    color: var(--blue-mid);
+    padding: .1em .35em;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+  .val {
+    font-family: "SF Mono", "Cascadia Code", Consolas, monospace;
+    font-size: .82em;
+    background: var(--code-bg);
+    color: var(--text);
+    padding: .1em .35em;
+    border-radius: 3px;
+  }
+
+  /* ── Callout boxes ── */
+  .callout {
+    display: flex;
+    gap: .75rem;
+    padding: .8rem 1rem;
+    border-radius: var(--radius);
+    font-size: .875rem;
+    margin: .75rem 0 0;
+    border-left: 3px solid;
+  }
+  .callout-icon { flex-shrink: 0; font-size: 1rem; line-height: 1.5; }
+  .callout.info { background: var(--blue-lt); border-color: var(--blue); color: var(--text); }
+  .callout.warn { background: var(--amber-lt); border-color: var(--amber); color: var(--text); }
+  .callout.ok   { background: var(--green-lt); border-color: var(--green); color: var(--text); }
+
+  /* ── Result chip ── */
+  .result-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    background: var(--green-lt);
+    border: 1px solid var(--green);
+    color: var(--green);
+    font-size: .78rem;
+    font-weight: 700;
+    padding: .25rem .65rem;
+    border-radius: 20px;
+    margin-top: .6rem;
+  }
+
+  /* ── Badge ── */
+  .badge {
+    display: inline-block;
+    font-size: .68rem;
+    font-weight: 700;
+    padding: .1rem .4rem;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .badge-blue { background: var(--blue-lt); color: var(--blue); }
+  .badge-amber { background: var(--amber-lt); color: var(--amber); }
+  .badge-green { background: var(--green-lt); color: var(--green); }
+
+  /* ── Summary bar ── */
+  .summary-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+  }
+  .summary-bar h2 {
+    font-family: Georgia, serif;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: .6rem;
+    color: var(--text);
+  }
+  .summary-pills { display: flex; flex-wrap: wrap; gap: .4rem; }
+  .summary-pill {
+    font-size: .75rem;
+    font-weight: 600;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    padding: .2rem .55rem;
+    border-radius: 20px;
+    text-decoration: none;
+    transition: background .15s, color .15s;
+  }
+  .summary-pill:hover { background: var(--blue-lt); color: var(--blue); border-color: var(--blue); }
+
+  /* ── Data table with overflow ── */
+  .table-wrap { overflow-x: auto; }
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .83rem;
+    min-width: 400px;
+  }
+  table.data-table th {
+    background: var(--bg2);
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--text-3);
+    padding: .45rem .75rem;
+    text-align: left;
+    border-bottom: 2px solid var(--border);
+  }
+  table.data-table td {
+    padding: .45rem .75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  table.data-table tr:last-child td { border-bottom: none; }
+  table.data-table tr:hover td { background: var(--bg); }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .main { padding: 1.5rem 1rem 0; }
+    .step { grid-template-columns: 2.4rem 1fr; --step-sz: 2.4rem; gap: 0 1rem; }
+    .step-title { font-size: 1rem; }
+    .ribbon { padding: .6rem 1rem; }
+    .topbar { padding: .6rem 1rem; }
+    .topbar-meta { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div>
+    <div class="topbar-brand">Kling &amp; Freitag GmbH &nbsp;&middot;&nbsp; Odoo 19 Enterprise</div>
+    <div class="topbar-title">K&amp;F PIA M &ndash; Vollst&auml;ndiger Prozessdurchlauf</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:.75rem;">
+    <div class="topbar-meta">Stand: August 2026</div>
+    <button class="theme-toggle" onclick="toggleTheme()">Hell / Dunkel</button>
+  </div>
+</div>
+
+<!-- Process ribbon -->
+<div class="ribbon-wrap">
+  <div class="ribbon" role="navigation" aria-label="Prozessschritte">
+    <a class="ribbon-step" href="#s1"><span class="n">1</span> Anfrage</a>
+    <span class="ribbon-arrow">&rsaquo;</span>
+    <a class="ribbon-step" href="#s2"><span class="n">2</span> Angebot</a>
+    <span class="ribbon-arrow">&rsaquo;</span>
+    <a class="ribbon-step" href="#s3"><span class="n">3</span> Auftrag</a>
+    <span class="ribbon-arrow">&rsaquo;</span>
+    <a class="ribbon-step" href="#s4"><span class="n">4</span> Bedarfsplanung</a>
+    <span class="ribbon-arrow">&rsaquo;</span>
+    <a class="ribbon-step" href="#s5"><span class="n">5</span> Einkauf</a>
+    <span class="ribbon-arrow">&rsaquo;</span>
+    <a class="ribbon-step" href="#s6"><span class="n">6</span> Lohnfertigung</a>
+    <span class="ribbon-arrow">&rsaquo;</span>
+    <a class="ribbon-step" href="#s7"><span class="n">7</span> Fertigung</a>
+    <span class="ribbon-arrow">&rsaquo;</span>
+    <a class="ribbon-step" href="#s8"><span class="n">8</span> QS</a>
+    <span class="ribbon-arrow">&rsaquo;</span>
+    <a class="ribbon-step" href="#s9"><span class="n">9</span> Einlagerung</a>
+    <span class="ribbon-arrow">&rsaquo;</span>
+    <a class="ribbon-step" href="#s10"><span class="n">10</span> Versand</a>
+    <span class="ribbon-arrow">&rsaquo;</span>
+    <a class="ribbon-step" href="#s11"><span class="n">11</span> Rechnung</a>
+    <span class="ribbon-arrow">&rsaquo;</span>
+    <a class="ribbon-step" href="#s12"><span class="n">12</span> Zahlung</a>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Summary bar -->
+  <div class="summary-bar">
+    <h2>&#220;berblick</h2>
+    <p style="font-size:.88rem;color:var(--text-2);margin-bottom:.75rem;">
+      Vollst&auml;ndiger Prozessdurchlauf in einer frischen Odoo&nbsp;19&nbsp;Enterprise-Instanz mit Kontenrahmen SKR03.
+      Demonstriert am Artikel <strong>K&amp;F PIA M</strong> (Wandlautsprecher) &ndash; inklusive externer
+      Lohnfertigung bei <strong>Cobertec</strong> (Pulverbeschichtung Metallgeh&auml;use) und Qualit&auml;tssicherung.
+    </p>
+    <div class="summary-pills">
+      <a class="summary-pill" href="#phase0">Phase 0: Stammdaten A&ndash;E</a>
+      <a class="summary-pill" href="#s1">1 Anfrage</a>
+      <a class="summary-pill" href="#s2">2 Angebot</a>
+      <a class="summary-pill" href="#s3">3 Auftrag</a>
+      <a class="summary-pill" href="#s4">4 Bedarfsplanung</a>
+      <a class="summary-pill" href="#s5">5 Einkauf</a>
+      <a class="summary-pill" href="#s6">6 Lohnfertigung Cobertec</a>
+      <a class="summary-pill" href="#s7">7 Fertigung</a>
+      <a class="summary-pill" href="#s8">8 QS</a>
+      <a class="summary-pill" href="#s9">9 Einlagerung</a>
+      <a class="summary-pill" href="#s10">10 Versand</a>
+      <a class="summary-pill" href="#s11">11 Rechnung</a>
+      <a class="summary-pill" href="#s12">12 Zahlungseingang</a>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════
+       PHASE 0: STAMMDATEN
+  ══════════════════════════════════════ -->
+  <div id="phase0">
+    <div class="phase-header">
+      <span class="phase-label">Phase 0 &mdash; Stammdaten</span>
+      <span class="phase-badge">Voraussetzung</span>
+    </div>
+    <p class="phase-desc" style="margin-bottom:1.5rem;">
+      Einmalige Grundeinrichtung. Alle f&uuml;nf Setup-Bl&ouml;cke vor dem ersten Prozessdurchlauf anlegen.
+    </p>
+  </div>
+
+  <!-- SETUP A: Lieferanten -->
+  <div class="step">
+    <div class="step-num setup">A</div>
+    <div class="step-body">
+      <div class="step-subtitle">Setup &middot; Kontakte</div>
+      <div class="step-title">Lieferanten &amp; Lohnfertiger anlegen</div>
+      <div class="step-card">
+        <div class="card-section">
+          <div class="card-section-label">Navigation</div>
+          <div class="nav-path">Kontakte &rsaquo; Neu</div>
+        </div>
+        <div class="card-section">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr><th>Name</th><th>Land</th><th>Lieferant</th><th>Hinweis</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Sica Altoparlanti S.r.l.</strong></td>
+                  <td>Italien (IT)</td>
+                  <td><span class="badge badge-blue">Ja</span></td>
+                  <td>4&ldquo;-Chassis, EU-Lieferant</td>
+                </tr>
+                <tr>
+                  <td><strong>deupack GmbH</strong></td>
+                  <td>Deutschland</td>
+                  <td><span class="badge badge-blue">Ja</span></td>
+                  <td>Kartonverpackung</td>
+                </tr>
+                <tr>
+                  <td><strong>Digi-Key Electronics</strong></td>
+                  <td>USA (US)</td>
+                  <td><span class="badge badge-blue">Ja</span></td>
+                  <td>Schalter; ggf. USD &rarr; EUR</td>
+                </tr>
+                <tr>
+                  <td><strong>MTI GmbH</strong></td>
+                  <td>Deutschland</td>
+                  <td><span class="badge badge-blue">Ja</span></td>
+                  <td>Kabel, Leitungen</td>
+                </tr>
+                <tr>
+                  <td><strong>Cobertec GmbH</strong></td>
+                  <td>Deutschland</td>
+                  <td><span class="badge badge-blue">Ja</span></td>
+                  <td><strong>Lohnfertiger</strong> &ndash; Pulverbeschichtung</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout info">
+            <span class="callout-icon">&#8505;</span>
+            <span>Jeder Kontakt: Tab <em>Verkauf &amp; Einkauf</em> &rarr; <code>Unternehmen</code> aktivieren. Bei Cobertec zus&auml;tzlich: <code>Lohnfertiger = Ja</code> (erscheint nach Aktivierung von Modul <em>mrp_subcontracting</em>).</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETUP B: Testkunde -->
+  <div class="step">
+    <div class="step-num setup">B</div>
+    <div class="step-body">
+      <div class="step-subtitle">Setup &middot; Kontakte</div>
+      <div class="step-title">Testkunde anlegen</div>
+      <div class="step-card">
+        <div class="card-section">
+          <div class="card-section-label">Navigation</div>
+          <div class="nav-path">Kontakte &rsaquo; Neu</div>
+        </div>
+        <div class="card-section">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Feld</th><th>Wert</th></tr></thead>
+              <tbody>
+                <tr><td><code>Name</code></td><td><span class="val">Muster Veranstaltungstechnik GmbH</span></td></tr>
+                <tr><td><code>Typ</code></td><td><span class="val">Unternehmen</span></td></tr>
+                <tr><td><code>Stra&szlig;e</code></td><td><span class="val">Messeweg 12</span></td></tr>
+                <tr><td><code>PLZ / Ort</code></td><td><span class="val">30521 Hannover</span></td></tr>
+                <tr><td><code>Land</code></td><td><span class="val">Deutschland</span></td></tr>
+                <tr><td><code>Ust-IdNr.</code></td><td><span class="val">DE123456789</span></td></tr>
+                <tr><td><code>Zahlungsbedingung</code></td><td><span class="val">30 Tage netto</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETUP C: Produkte -->
+  <div class="step">
+    <div class="step-num setup">C</div>
+    <div class="step-body">
+      <div class="step-subtitle">Setup &middot; Lager / Fertigung</div>
+      <div class="step-title">Produkte anlegen</div>
+      <div class="step-card">
+        <div class="card-section">
+          <div class="card-section-label">Navigation</div>
+          <div class="nav-path">Lager &rsaquo; Produkte &rsaquo; Produkte &rsaquo; Neu</div>
+        </div>
+        <div class="card-section">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr><th>Produktname</th><th>Typ</th><th>Route</th><th>VK</th><th>EK</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>K&amp;F PIA M</strong></td>
+                  <td>Lagerf&auml;hig</td>
+                  <td><span class="badge badge-blue">Fertigung</span></td>
+                  <td>480,00&nbsp;&euro;</td>
+                  <td>&mdash;</td>
+                </tr>
+                <tr>
+                  <td>Sica 4&ldquo; Chassis C08N.16.08</td>
+                  <td>Lagerf&auml;hig</td>
+                  <td><span class="badge badge-amber">Einkauf</span></td>
+                  <td>&mdash;</td>
+                  <td>28,50&nbsp;&euro;</td>
+                </tr>
+                <tr>
+                  <td>Karton PIA M (deupack)</td>
+                  <td>Verbrauchsmaterial</td>
+                  <td><span class="badge badge-amber">Einkauf</span></td>
+                  <td>&mdash;</td>
+                  <td>3,20&nbsp;&euro;</td>
+                </tr>
+                <tr>
+                  <td>Kippschalter 250V/6A (Digi-Key)</td>
+                  <td>Lagerf&auml;hig</td>
+                  <td><span class="badge badge-amber">Einkauf</span></td>
+                  <td>&mdash;</td>
+                  <td>1,85&nbsp;&euro;</td>
+                </tr>
+                <tr>
+                  <td>Anschlusskabel 0,5m 2&times;0,75 (MTI)</td>
+                  <td>Verbrauchsmaterial</td>
+                  <td><span class="badge badge-amber">Einkauf</span></td>
+                  <td>&mdash;</td>
+                  <td>2,10&nbsp;&euro;</td>
+                </tr>
+                <tr>
+                  <td><strong>Geh&auml;use PIA M &ndash; Rohteil</strong></td>
+                  <td>Lagerf&auml;hig</td>
+                  <td><span class="badge badge-amber">Einkauf</span></td>
+                  <td>&mdash;</td>
+                  <td>42,00&nbsp;&euro;</td>
+                </tr>
+                <tr>
+                  <td><strong>Geh&auml;use PIA M &ndash; beschichtet</strong></td>
+                  <td>Lagerf&auml;hig</td>
+                  <td><span class="badge badge-blue">Fertigung</span> <span class="badge badge-amber" style="margin-left:.25rem">Lohnfertigung</span></td>
+                  <td>&mdash;</td>
+                  <td>&mdash;</td>
+                </tr>
+                <tr>
+                  <td>Lohnfertigung Pulverbeschichtung (Cobertec)</td>
+                  <td>Dienstleistung</td>
+                  <td>&mdash;</td>
+                  <td>&mdash;</td>
+                  <td>18,00&nbsp;&euro;/Stk</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout warn">
+            <span class="callout-icon">&#9888;</span>
+            <span>K&amp;F PIA M: Tab <strong>Allgemein</strong> &rarr; Einheit = <code>Stk</code>; Tab <strong>Lager</strong> &rarr; Route = <code>Fertigen</code>; <code>Verfolgung = Seriennummer</code>. Geh&auml;use-beschichtet ebenfalls Route <code>Fertigen</code> (wird durch Lohnfertigungs-SB gesteuert).</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETUP D: Stücklisten -->
+  <div class="step">
+    <div class="step-num setup">D</div>
+    <div class="step-body">
+      <div class="step-subtitle">Setup &middot; Fertigung</div>
+      <div class="step-title">St&uuml;cklisten konfigurieren</div>
+      <div class="step-card">
+        <div class="card-section">
+          <div class="card-section-label">D1 &ndash; Lohnfertigungs-St&uuml;ckliste (Geh&auml;use beschichtet)</div>
+          <div class="nav-path">Fertigung &rsaquo; Produkte &rsaquo; St&uuml;cklisten &rsaquo; Neu</div>
+          <div class="table-wrap" style="margin-top:.5rem;">
+            <table class="data-table">
+              <thead><tr><th>Feld</th><th>Wert</th></tr></thead>
+              <tbody>
+                <tr><td><code>Produkt</code></td><td><span class="val">Geh&auml;use PIA M &ndash; beschichtet</span></td></tr>
+                <tr><td><code>St&uuml;cklistentyp</code></td><td><span class="val">Lohnfertigung</span></td></tr>
+                <tr><td><code>Lohnfertiger</code></td><td><span class="val">Cobertec GmbH</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="font-size:.83rem;color:var(--text-2);margin:.7rem 0 .3rem;">Komponenten:</p>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Komponente</th><th>Menge</th><th>Hinweis</th></tr></thead>
+              <tbody>
+                <tr><td>Geh&auml;use PIA M &ndash; Rohteil</td><td>1 Stk</td><td>Beistellteil an Cobertec</td></tr>
+                <tr><td>Lohnfertigung Pulverbeschichtung (Cobertec)</td><td>1 Stk</td><td>Dienstleistung &rarr; erzeugt Einkaufsbestellung</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">D2 &ndash; Fertigungsst&uuml;ckliste (K&amp;F PIA M)</div>
+          <div class="nav-path">Fertigung &rsaquo; Produkte &rsaquo; St&uuml;cklisten &rsaquo; Neu</div>
+          <div class="table-wrap" style="margin-top:.5rem;">
+            <table class="data-table">
+              <thead><tr><th>Feld</th><th>Wert</th></tr></thead>
+              <tbody>
+                <tr><td><code>Produkt</code></td><td><span class="val">K&amp;F PIA M</span></td></tr>
+                <tr><td><code>St&uuml;cklistentyp</code></td><td><span class="val">Fertigen</span></td></tr>
+                <tr><td><code>Menge</code></td><td><span class="val">1 Stk</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="font-size:.83rem;color:var(--text-2);margin:.7rem 0 .3rem;">Komponenten:</p>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Komponente</th><th>Menge</th></tr></thead>
+              <tbody>
+                <tr><td>Geh&auml;use PIA M &ndash; beschichtet</td><td>1 Stk</td></tr>
+                <tr><td>Sica 4&ldquo; Chassis C08N.16.08</td><td>1 Stk</td></tr>
+                <tr><td>Kippschalter 250V/6A (Digi-Key)</td><td>1 Stk</td></tr>
+                <tr><td>Anschlusskabel 0,5m (MTI)</td><td>1 Stk</td></tr>
+                <tr><td>Karton PIA M (deupack)</td><td>1 Stk</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="font-size:.83rem;color:var(--text-2);margin:.7rem 0 .3rem;">Arbeitsg&auml;nge (Tab &bdquo;Arbeitsg&auml;nge&ldquo;):</p>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Vorgang</th><th>Arbeitsplatz</th><th>Dauer</th></tr></thead>
+              <tbody>
+                <tr><td>Montage PIA M</td><td>MP1 Montage</td><td>45 min</td></tr>
+                <tr><td>Funktionstest</td><td>MP1 Montage</td><td>10 min</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETUP E: Module & QS -->
+  <div class="step">
+    <div class="step-num setup">E</div>
+    <div class="step-body">
+      <div class="step-subtitle">Setup &middot; Konfiguration</div>
+      <div class="step-title">Module aktivieren &amp; QS-Pr&uuml;fpunkt anlegen</div>
+      <div class="step-card">
+        <div class="card-section">
+          <div class="card-section-label">Module (Einstellungen &rsaquo; Apps)</div>
+          <ul class="actions">
+            <li><strong>Fertigung &rsaquo; Lohnfertigung</strong> installieren (<em>mrp_subcontracting</em>)</li>
+            <li><strong>Qualit&auml;t</strong> installieren (<em>quality_control</em>)</li>
+            <li><strong>CRM</strong> installieren (f&uuml;r Anfragen / Chancen)</li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">Arbeitsplatz anlegen</div>
+          <div class="nav-path">Fertigung &rsaquo; Konfiguration &rsaquo; Arbeitspl&auml;tze &rsaquo; Neu</div>
+          <p style="font-size:.88rem;margin-top:.4rem;">Name: <span class="val">MP1 Montage</span> &nbsp;&mdash;&nbsp; Typ: Arbeitsplatz</p>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">QS-Kontrollpunkt anlegen</div>
+          <div class="nav-path">Qualit&auml;t &rsaquo; Konfiguration &rsaquo; Kontrollpunkte &rsaquo; Neu</div>
+          <div class="table-wrap" style="margin-top:.5rem;">
+            <table class="data-table">
+              <thead><tr><th>Feld</th><th>Wert</th></tr></thead>
+              <tbody>
+                <tr><td><code>Name</code></td><td><span class="val">Abnahme PIA M &ndash; Sichtpr&uuml;fung</span></td></tr>
+                <tr><td><code>Produkt</code></td><td><span class="val">K&amp;F PIA M</span></td></tr>
+                <tr><td><code>Vorgang</code></td><td><span class="val">Fertigung</span></td></tr>
+                <tr><td><code>Kontrolltyp</code></td><td><span class="val">Bestanden / Nicht bestanden</span></td></tr>
+                <tr><td><code>Pr&uuml;finstruktion</code></td><td><span class="val">Sichtpr&uuml;fung Geh&auml;use; Akustiktest 1&nbsp;kHz @ 1&nbsp;m</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════
+       PHASE 1: PROZESSDURCHLAUF
+  ══════════════════════════════════════ -->
+  <div>
+    <div class="phase-header" style="margin-top:3rem;">
+      <span class="phase-label">Phase 1 &mdash; Prozessdurchlauf</span>
+      <span class="phase-badge">Schritte 1 &ndash; 11</span>
+    </div>
+    <p class="phase-desc" style="margin-bottom:1.5rem;">
+      Anfrage &rarr; Angebot &rarr; Auftrag &rarr; Bedarfsplanung &rarr; Einkauf &rarr; Lohnfertigung Cobertec &rarr;
+      Fertigung &rarr; QS &rarr; Einlagerung &rarr; Versand &rarr; Rechnung &rarr; Zahlungseingang.
+      Durchf&uuml;hrungszeit ca. 45&ndash;60 Min.
+    </p>
+  </div>
+
+
+  <!-- STEP 1: Anfrage -->
+  <div class="step" id="s1">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-subtitle">CRM</div>
+      <div class="step-title">Anfrage erfassen</div>
+      <div class="step-card">
+        <div class="card-section">
+          <div class="card-section-label">Navigation</div>
+          <div class="nav-path">CRM &rsaquo; Leads &rsaquo; Neu</div>
+        </div>
+        <div class="card-section">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Feld</th><th>Wert</th></tr></thead>
+              <tbody>
+                <tr><td><code>Lead-Titel</code></td><td><span class="val">K&amp;F PIA M &ndash; Bedarf Muster VT GmbH</span></td></tr>
+                <tr><td><code>Kontakt</code></td><td><span class="val">Muster Veranstaltungstechnik GmbH</span></td></tr>
+                <tr><td><code>Erw. Umsatz</code></td><td><span class="val">480,00 &euro;</span></td></tr>
+                <tr><td><code>Wahrscheinlichkeit</code></td><td><span class="val">70 %</span></td></tr>
+                <tr><td><code>Phase</code></td><td><span class="val">Qualifiziert</span></td></tr>
+                <tr><td><code>Notizen</code></td><td><span class="val">Anfrage 1&times; PIA M, Lieferung bis KW&nbsp;40</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card-section">
+          <ul class="actions">
+            <li>Speichern. Anfrage erscheint in Kanban-Ansicht unter <em>Qualifiziert</em>.</li>
+          </ul>
+          <div class="result-chip">&#10003; Lead angelegt</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- STEP 2: Angebot -->
+  <div class="step" id="s2">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-subtitle">CRM &rarr; Vertrieb</div>
+      <div class="step-title">Angebot erstellen</div>
+      <div class="step-card">
+        <div class="card-section">
+          <div class="card-section-label">Aus CRM-Lead heraus</div>
+          <ul class="actions">
+            <li>Lead &ouml;ffnen &rarr; Button <strong>Neues Angebot</strong> (oben rechts).</li>
+            <li>Odoo wechselt in neuen Verkaufsauftrag im Status <em>Angebot</em>.</li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">Angebotsposition</div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Produkt</th><th>Menge</th><th>Einzelpreis</th><th>Steuer</th><th>Gesamt</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><strong>K&amp;F PIA M</strong></td>
+                  <td>1 Stk</td>
+                  <td>480,00 &euro;</td>
+                  <td>USt. 19 %</td>
+                  <td>480,00 &euro;</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Feld</th><th>Wert</th></tr></thead>
+              <tbody>
+                <tr><td><code>G&uuml;ltigkeitsdatum</code></td><td><span class="val">+30 Tage</span></td></tr>
+                <tr><td><code>Zahlungsbedingung</code></td><td><span class="val">30 Tage netto</span></td></tr>
+                <tr><td><code>Lieferbedingungen</code></td><td><span class="val">DDP Hannover</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout info">
+            <span class="callout-icon">&#8505;</span>
+            <span>Angebot als PDF drucken: <strong>Drucken &rsaquo; Angebot</strong>. Optional per E-Mail versenden: <strong>Per E-Mail versenden</strong>. Warten auf Auftragserteilung durch Kunden.</span>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="result-chip">&#10003; Angebot S00001 erstellt</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- STEP 3: Auftrag -->
+  <div class="step" id="s3">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-subtitle">Vertrieb</div>
+      <div class="step-title">Auftrag best&auml;tigen</div>
+      <div class="step-card">
+        <div class="card-section">
+          <ul class="actions">
+            <li>Angebot S00001 &ouml;ffnen &rarr; Button <strong>Auftrag best&auml;tigen</strong>.</li>
+            <li>Status wechselt: <em>Angebot</em> &rarr; <em>Verkaufsauftrag</em>.</li>
+            <li>Odoo legt automatisch im Hintergrund an: eine <strong>Lieferung</strong> (WH/OUT/&hellip;) und einen <strong>Fertigungsauftrag</strong> (MO/&hellip;).</li>
+          </ul>
+          <div class="callout ok">
+            <span class="callout-icon">&#10003;</span>
+            <span>Smart-Buttons oben zeigen nun <strong>1 Lieferung</strong> und <strong>1 Fertigung</strong>. Die Komponenten sind noch nicht reserviert &ndash; das erledigt die Bedarfsplanung.</span>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="result-chip">&#10003; Verkaufsauftrag S00001 best&auml;tigt</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- STEP 4: Bedarfsplanung -->
+  <div class="step" id="s4">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-subtitle">Fertigung / MRP</div>
+      <div class="step-title">Bedarfsplanung ausf&uuml;hren</div>
+      <div class="step-card">
+        <div class="card-section">
+          <div class="card-section-label">Navigation</div>
+          <div class="nav-path">Fertigung &rsaquo; Planung &rsaquo; Produktionsplanung ausf&uuml;hren</div>
+        </div>
+        <div class="card-section">
+          <ul class="actions">
+            <li>Button <strong>Scheduler ausf&uuml;hren</strong> klicken &rarr; Best&auml;tigen.</li>
+            <li>MRP berechnet Bedarfe f&uuml;r alle PIA-M-Komponenten aus der St&uuml;ckliste.</li>
+            <li>Da kein Lagerbestand vorhanden: Odoo erzeugt <strong>Bestellvorschl&auml;ge</strong> f&uuml;r Sica-Chassis, Karton, Schalter, Kabel und Rohteil-Geh&auml;use.</li>
+            <li>F&uuml;r <em>Geh&auml;use PIA M &ndash; beschichtet</em>: MRP erstellt einen <strong>Sub-Fertigungsauftrag</strong> + <strong>Bestellvorschlag an Cobertec</strong>.</li>
+          </ul>
+          <div class="callout info">
+            <span class="callout-icon">&#8505;</span>
+            <span>Bestellvorschl&auml;ge pr&uuml;fen: <strong>Einkauf &rsaquo; Bestellungen &rsaquo; Bestellvorschl&auml;ge</strong>. Dort alle 5 Bedarfe sichtbar &rarr; Schritt&nbsp;5.</span>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="result-chip">&#10003; MRP ausgef&uuml;hrt &ndash; Bestellvorschl&auml;ge erzeugt</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- STEP 5: Einkauf -->
+  <div class="step" id="s5">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <div class="step-subtitle">Einkauf</div>
+      <div class="step-title">Einkaufsbestellungen aufgeben</div>
+      <div class="step-card">
+        <div class="card-section">
+          <div class="card-section-label">Navigation</div>
+          <div class="nav-path">Einkauf &rsaquo; Bestellungen &rsaquo; Bestellvorschl&auml;ge</div>
+        </div>
+        <div class="card-section">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr><th>Lieferant</th><th>Artikel</th><th>Menge</th><th>EK-Preis</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Sica Altoparlanti</td>
+                  <td>4&ldquo; Chassis C08N.16.08</td>
+                  <td>1 Stk</td>
+                  <td>28,50 &euro;</td>
+                </tr>
+                <tr>
+                  <td>deupack GmbH</td>
+                  <td>Karton PIA M</td>
+                  <td>1 Stk</td>
+                  <td>3,20 &euro;</td>
+                </tr>
+                <tr>
+                  <td>Digi-Key Electronics</td>
+                  <td>Kippschalter 250V/6A</td>
+                  <td>1 Stk</td>
+                  <td>1,85 &euro;</td>
+                </tr>
+                <tr>
+                  <td>MTI GmbH</td>
+                  <td>Anschlusskabel 0,5m</td>
+                  <td>1 Stk</td>
+                  <td>2,10 &euro;</td>
+                </tr>
+                <tr>
+                  <td><em>Blech-Lieferant</em></td>
+                  <td>Geh&auml;use PIA M &ndash; Rohteil</td>
+                  <td>1 Stk</td>
+                  <td>42,00 &euro;</td>
+                </tr>
+                <tr>
+                  <td><strong>Cobertec GmbH</strong></td>
+                  <td>Lohnfertigung Pulverbeschichtung</td>
+                  <td>1 Stk</td>
+                  <td>18,00 &euro;</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <ul class="actions" style="margin-top:.75rem;">
+            <li>Jeden Bestellvorschlag einzeln &ouml;ffnen &rarr; Lieferant pr&uuml;fen &rarr; <strong>Bestellung best&auml;tigen</strong>.</li>
+            <li>Oder: Mehrere markieren &rarr; <strong>Bestellungen erstellen</strong> (gruppiert nach Lieferant).</li>
+          </ul>
+          <div class="callout warn">
+            <span class="callout-icon">&#9888;</span>
+            <span>Die Cobertec-Bestellung enth&auml;lt einen Tab <strong>&bdquo;Beistellteile&ldquo;</strong> mit dem Rohteil-Geh&auml;use. Das ist der physische Versand von K&amp;F an Cobertec &ndash; nicht l&ouml;schen.</span>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="result-chip">&#10003; 6 Einkaufsbestellungen best&auml;tigt (inkl. Cobertec)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- STEP 6: Lohnfertigung Cobertec -->
+  <div class="step" id="s6">
+    <div class="step-num">6</div>
+    <div class="step-body">
+      <div class="step-subtitle">Einkauf / Lager &ndash; Lohnfertigung</div>
+      <div class="step-title">Lohnfertigung Cobertec: Beistellteil senden &amp; Geh&auml;use empfangen</div>
+      <div class="step-card">
+        <div class="card-section">
+          <div class="card-section-label">Wie Lohnfertigung in Odoo 19 funktioniert</div>
+          <div class="callout info" style="margin-top:0;">
+            <span class="callout-icon">&#8505;</span>
+            <div>
+              Odoo erzeugt bei Lohnfertigungs-BOM automatisch zwei Lagerbewegungen:<br>
+              <strong>(1)</strong> Ausgangs-Buchung: Beistellteil (Rohteil) &rarr; virtueller Lagerort Cobertec<br>
+              <strong>(2)</strong> Eingangs-Buchung: Fertiges Geh&auml;use &larr; von Cobertec<br>
+              Beide h&auml;ngen an der Cobertec-Bestellung.
+            </div>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">6a &ndash; Rohteil-Geh&auml;use von Blech-Lieferant einlagern</div>
+          <div class="nav-path">Einkauf &rsaquo; Bestellungen &rsaquo; [PO Rohteil] &rsaquo; Eingang</div>
+          <ul class="actions">
+            <li>Eingangs-Quittierung &ouml;ffnen &rarr; Menge <span class="val">1</span> &rarr; <strong>Validieren</strong>.</li>
+            <li>Rohteil-Geh&auml;use ist jetzt auf Lager <em>WH/Stock</em>.</li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">6b &ndash; Beistellteil an Cobertec versenden</div>
+          <div class="nav-path">Lager &rsaquo; &Uuml;bertragungen &rsaquo; [Beistellteile-Buchung]</div>
+          <ul class="actions">
+            <li>Die automatisch erzeugte Ausgangs-&Uuml;bertragung f&uuml;r Cobertec &ouml;ffnen (Typ: Beistellteile).</li>
+            <li>Produkt: <span class="val">Geh&auml;use PIA M &ndash; Rohteil</span>, Menge: <span class="val">1</span>.</li>
+            <li><strong>Validieren</strong> &rarr; Bestand wechselt auf virtuellen Lagerort <em>Subcontracting/Cobertec</em>.</li>
+            <li>Optional: Begleitlieferschein drucken und physisch mit der Ware mitgeben.</li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">6c &ndash; Beschichtetes Geh&auml;use von Cobertec empfangen</div>
+          <div class="nav-path">Einkauf &rsaquo; Bestellungen &rsaquo; [PO Cobertec] &rsaquo; Eingang</div>
+          <ul class="actions">
+            <li>Cobertec-Bestellung &ouml;ffnen &rarr; Eingangsquittierung &ouml;ffnen.</li>
+            <li>Menge: <span class="val">1</span> f&uuml;r <em>Geh&auml;use PIA M &ndash; beschichtet</em> &rarr; <strong>Validieren</strong>.</li>
+            <li>Odoo bucht das beschichtete Geh&auml;use ins Lager ein und schlie&szlig;t den Sub-Fertigungsauftrag.</li>
+          </ul>
+          <div class="result-chip">&#10003; Geh&auml;use PIA M beschichtet auf Lager &ndash; Lohnfertigung abgeschlossen</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- STEP 7: Wareneingänge Direktkomponenten -->
+  <div class="step" id="s7">
+    <div class="step-num">7</div>
+    <div class="step-body">
+      <div class="step-subtitle">Lager / Einkauf</div>
+      <div class="step-title">Wareneingänge der Direktkomponenten verbuchen</div>
+      <div class="step-card">
+        <div class="card-section">
+          <div class="card-section-label">Navigation</div>
+          <div class="nav-path">Einkauf &rsaquo; Bestellungen &rsaquo; [jeweilige PO] &rsaquo; Eingang</div>
+        </div>
+        <div class="card-section">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Bestellung</th><th>Produkt</th><th>Menge</th></tr></thead>
+              <tbody>
+                <tr><td>PO Sica</td><td>4&ldquo; Chassis C08N.16.08</td><td>1 Stk</td></tr>
+                <tr><td>PO deupack</td><td>Karton PIA M</td><td>1 Stk</td></tr>
+                <tr><td>PO Digi-Key</td><td>Kippschalter 250V/6A</td><td>1 Stk</td></tr>
+                <tr><td>PO MTI</td><td>Anschlusskabel 0,5m</td><td>1 Stk</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <ul class="actions" style="margin-top:.75rem;">
+            <li>Jede PO &ouml;ffnen &rarr; Eingangs-Quittierung &ouml;ffnen &rarr; Menge pr&uuml;fen &rarr; <strong>Validieren</strong>.</li>
+            <li>Nach Validierung: Status wechselt zu <em>Erledigt</em>, Lagerbestand erh&ouml;ht sich.</li>
+          </ul>
+          <div class="result-chip">&#10003; Alle Direktkomponenten auf Lager &ndash; Fertigung kann starten</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- STEP 8: Fertigung -->
+  <div class="step" id="s8">
+    <div class="step-num">8</div>
+    <div class="step-body">
+      <div class="step-subtitle">Fertigung</div>
+      <div class="step-title">Fertigungsauftrag durchf&uuml;hren</div>
+      <div class="step-card">
+        <div class="card-section">
+          <div class="card-section-label">Navigation</div>
+          <div class="nav-path">Fertigung &rsaquo; Fertigungsauftr&auml;ge &rsaquo; MO/00001</div>
+          <p style="font-size:.83rem;color:var(--text-2);margin-top:.3rem;">Oder: Verkaufsauftrag S00001 &rarr; Smart-Button <strong>Fertigung</strong></p>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">Auftrag pr&uuml;fen</div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Feld</th><th>Soll-Wert</th></tr></thead>
+              <tbody>
+                <tr><td><code>Produkt</code></td><td><span class="val">K&amp;F PIA M</span></td></tr>
+                <tr><td><code>Menge</code></td><td><span class="val">1 Stk</span></td></tr>
+                <tr><td><code>Verf&uuml;gbarkeit</code></td><td><span class="val">Alle verf&uuml;gbar &#10003;</span></td></tr>
+                <tr><td><code>Seriennr. Endprodukt</code></td><td><span class="val">PIA-M-0001 (manuell eingeben)</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">Montage durchf&uuml;hren</div>
+          <ul class="actions">
+            <li><strong>Verf&uuml;gbarkeit pr&uuml;fen</strong> &rarr; alle Komponenten gr&uuml;n.</li>
+            <li>Tab <strong>Arbeitsg&auml;nge</strong> &rarr; Vorgang &bdquo;Montage PIA M&ldquo; &ouml;ffnen.</li>
+            <li><strong>Arbeit starten</strong> klicken &rarr; Montage durchf&uuml;hren &rarr; <strong>Fertig</strong>.</li>
+            <li>Vorgang &bdquo;Funktionstest&ldquo; analog: starten &rarr; Testergebnis notieren &rarr; <strong>Fertig</strong>.</li>
+            <li>Seriennr. <span class="val">PIA-M-0001</span> im Feld <code>Seriennummer</code> eintragen.</li>
+          </ul>
+          <div class="callout info">
+            <span class="callout-icon">&#8505;</span>
+            <span>Noch nicht validieren &ndash; zuerst QS-Pr&uuml;fung in Schritt 9 abschlie&szlig;en.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- STEP 9: QS -->
+  <div class="step" id="s8q">
+    <div class="step-num">9</div>
+    <div class="step-body">
+      <div class="step-subtitle">Qualit&auml;tssicherung</div>
+      <div class="step-title">Qualit&auml;tspr&uuml;fung durchf&uuml;hren</div>
+      <div class="step-card">
+        <div class="card-section">
+          <div class="card-section-label">Navigation</div>
+          <div class="nav-path">Qualit&auml;t &rsaquo; Qualit&auml;tspr&uuml;fungen</div>
+          <p style="font-size:.83rem;color:var(--text-2);margin-top:.3rem;">Oder: Im Fertigungsauftrag erscheint ein QS-Icon-Button, sobald der Kontrollpunkt ausl&ouml;st.</p>
+        </div>
+        <div class="card-section">
+          <ul class="actions">
+            <li>Qualit&auml;tspr&uuml;fung <em>&bdquo;Abnahme PIA M &ndash; Sichtpr&uuml;fung&ldquo;</em> &ouml;ffnen.</li>
+            <li>MO: <span class="val">MO/00001</span>, Produkt: <span class="val">K&amp;F PIA M</span>, Seriennr.: <span class="val">PIA-M-0001</span>.</li>
+            <li>Sichtpr&uuml;fung: Pulverbeschichtung einwandfrei, keine Kratzer &rarr; <strong>Bestanden</strong>.</li>
+            <li>Akustiktest 1&nbsp;kHz / 1&nbsp;m: Ergebnis in Notizfeld &rarr; <strong>Bestanden</strong>.</li>
+            <li><strong>Pr&uuml;fung abschlie&szlig;en</strong> &rarr; Status: <em>Bestanden</em>.</li>
+          </ul>
+          <div class="callout warn">
+            <span class="callout-icon">&#9888;</span>
+            <span>Bei <em>Nicht bestanden</em>: Odoo kann das Validieren des Fertigungsauftrags blockieren (je nach Einstellung). Ursache im Pr&uuml;fprotokoll dokumentieren.</span>
+          </div>
+          <div class="result-chip">&#10003; QS Bestanden &ndash; PIA-M-0001 freigegeben</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- STEP 10: Einlagerung -->
+  <div class="step" id="s9">
+    <div class="step-num">10</div>
+    <div class="step-body">
+      <div class="step-subtitle">Fertigung / Lager</div>
+      <div class="step-title">Fertigungsauftrag abschlie&szlig;en &amp; Einlagerung</div>
+      <div class="step-card">
+        <div class="card-section">
+          <ul class="actions">
+            <li>Fertigungsauftrag MO/00001 &ouml;ffnen.</li>
+            <li>Feld <code>Produzierte Menge</code>: <span class="val">1</span> eintragen (falls nicht automatisch).</li>
+            <li>Button <strong>Fertigungsauftrag abschlie&szlig;en</strong> klicken.</li>
+            <li>Odoo verbucht Komponentenverbrauch und legt <em>K&amp;F PIA M / SN PIA-M-0001</em> auf Lager.</li>
+          </ul>
+          <div class="callout ok">
+            <span class="callout-icon">&#10003;</span>
+            <span>Bestand pr&uuml;fen: <strong>Lager &rsaquo; Produkte &rsaquo; K&amp;F PIA M</strong> &rarr; Lagerbestand = <span class="val">1 Stk</span>, Seriennr. <span class="val">PIA-M-0001</span> sichtbar.</span>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">Put-away (optional)</div>
+          <p style="font-size:.88rem;color:var(--text-2);">Wenn Put-away-Regeln konfiguriert sind (z.B. Fertigware &rarr; WH/FG), bucht Odoo automatisch in den richtigen Lagerort. Ohne Regeln: Ware verbleibt in WH/Stock.</p>
+          <div class="result-chip">&#10003; K&amp;F PIA M eingelagert &ndash; bereit f&uuml;r Versand</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- STEP 11: Versand -->
+  <div class="step" id="s10">
+    <div class="step-num">11</div>
+    <div class="step-body">
+      <div class="step-subtitle">Lager</div>
+      <div class="step-title">Auslieferung &amp; Versand</div>
+      <div class="step-card">
+        <div class="card-section">
+          <div class="card-section-label">Navigation</div>
+          <div class="nav-path">Lager &rsaquo; Lieferungen &rsaquo; WH/OUT/00001</div>
+          <p style="font-size:.83rem;color:var(--text-2);margin-top:.3rem;">Oder: Verkaufsauftrag S00001 &rarr; Smart-Button <strong>Lieferung</strong></p>
+        </div>
+        <div class="card-section">
+          <ul class="actions">
+            <li>Lieferung WH/OUT/00001 &ouml;ffnen &rarr; Status: <em>Bereit</em>.</li>
+            <li>Seriennr. <span class="val">PIA-M-0001</span> in der Detailzeile pr&uuml;fen / eintragen.</li>
+            <li>Geplantes Datum pr&uuml;fen. Lieferschein drucken: <strong>Drucken &rsaquo; Lieferschein</strong>.</li>
+            <li>Button <strong>Validieren</strong> &rarr; Versand als erledigt gebucht, Lagerbestand -1.</li>
+          </ul>
+          <div class="callout info">
+            <span class="callout-icon">&#8505;</span>
+            <span>Bei 1 von 1 Einheit: kein R&uuml;ckstand (Backorder). Im Verkaufsauftrag wechselt der Lieferstatus auf <em>Vollst&auml;ndig geliefert</em>.</span>
+          </div>
+          <div class="result-chip">&#10003; WH/OUT/00001 validiert &ndash; Ware versandt</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- STEP 12: Rechnung -->
+  <div class="step" id="s11">
+    <div class="step-num">12</div>
+    <div class="step-body">
+      <div class="step-subtitle">Buchhaltung</div>
+      <div class="step-title">Kundenrechnung erstellen &amp; buchen</div>
+      <div class="step-card">
+        <div class="card-section">
+          <div class="card-section-label">Navigation</div>
+          <div class="nav-path">Vertrieb &rsaquo; Auftr&auml;ge &rsaquo; S00001 &rsaquo; Rechnung erstellen</div>
+        </div>
+        <div class="card-section">
+          <ul class="actions">
+            <li>Button <strong>Rechnungen erstellen</strong> im Verkaufsauftrag klicken.</li>
+            <li>Dialog: Rechnungsart = <span class="val">Regul&auml;re Rechnung</span> &rarr; <strong>Rechnungen erstellen</strong>.</li>
+            <li>Rechnung &ouml;ffnet sich im Status <em>Entwurf</em>.</li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">Rechnung pr&uuml;fen</div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Feld</th><th>Wert</th></tr></thead>
+              <tbody>
+                <tr><td><code>Kunde</code></td><td><span class="val">Muster Veranstaltungstechnik GmbH</span></td></tr>
+                <tr><td><code>Rechnungsdatum</code></td><td><span class="val">Heute</span></td></tr>
+                <tr><td><code>F&auml;lligkeitsdatum</code></td><td><span class="val">+30 Tage (gem. Zahlungsbedingung)</span></td></tr>
+                <tr><td><code>Position</code></td><td><span class="val">K&amp;F PIA M &ndash; 1 Stk &ndash; 480,00 &euro;</span></td></tr>
+                <tr><td><code>USt. 19 %</code></td><td><span class="val">91,20 &euro;</span></td></tr>
+                <tr><td><code>Gesamtbetrag brutto</code></td><td><span class="val">571,20 &euro;</span></td></tr>
+                <tr><td><code>Buchungskonto</code></td><td><span class="val">8400 (SKR03 Erl&ouml;se 19&nbsp;% USt.)</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout warn">
+            <span class="callout-icon">&#9888;</span>
+            <span>Steuerschl&uuml;ssel pr&uuml;fen: 19&nbsp;% auf Inlandslieferung. Rechnungsnummer-Nummernkreis vor dem Buchen konfigurieren (Buchhaltung &rsaquo; Konfiguration &rsaquo; Journale &rsaquo; Kundenrechnungen).</span>
+          </div>
+        </div>
+        <div class="card-section">
+          <ul class="actions">
+            <li>Button <strong>Buchen</strong> &rarr; Rechnung erh&auml;lt Nummer <span class="val">INV/2026/00001</span>.</li>
+            <li>Buchungsjournal-Eintr&auml;ge: 1400 Forderungen / 8400 Erl&ouml;se 19&nbsp;% / 1776 USt.</li>
+            <li>Optional: Rechnung als PDF drucken oder per E-Mail versenden.</li>
+          </ul>
+          <div class="result-chip">&#10003; INV/2026/00001 gebucht &ndash; 571,20&nbsp;&euro; offen</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- STEP 13: Zahlungseingang -->
+  <div class="step" id="s12" style="margin-bottom:4rem;">
+    <div class="step-num">12</div>
+    <div class="step-body">
+      <div class="step-subtitle">Buchhaltung</div>
+      <div class="step-title">Zahlungseingang erfassen</div>
+      <div class="step-card">
+        <div class="card-section">
+          <div class="card-section-label">Navigation</div>
+          <div class="nav-path">Buchhaltung &rsaquo; Kunden &rsaquo; Rechnungen &rsaquo; INV/2026/00001</div>
+        </div>
+        <div class="card-section">
+          <ul class="actions">
+            <li>Rechnung INV/2026/00001 &ouml;ffnen (Status: <em>Gebucht</em>, offen).</li>
+            <li>Button <strong>Zahlung erfassen</strong> klicken.</li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">Zahlungsdialog</div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Feld</th><th>Wert</th></tr></thead>
+              <tbody>
+                <tr><td><code>Journal</code></td><td><span class="val">Bankkonto (oder Kasse f&uuml;r Test)</span></td></tr>
+                <tr><td><code>Betrag</code></td><td><span class="val">571,20 &euro;</span></td></tr>
+                <tr><td><code>Zahlungsdatum</code></td><td><span class="val">Heute</span></td></tr>
+                <tr><td><code>Memo</code></td><td><span class="val">INV/2026/00001 &ndash; Muster VT GmbH</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <ul class="actions" style="margin-top:.75rem;">
+            <li>Button <strong>Zahlung erfassen</strong> &rarr; Zahlungsbuchung wird erstellt und mit Rechnung verrechnet.</li>
+            <li>Rechnungsstatus wechselt zu <em>Bezahlt</em> (gr&uuml;nes Banner).</li>
+            <li>Konto 1400 (Forderungen) ausgeglichen, Konto 1200 (Bank) erh&ouml;ht.</li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="callout ok">
+            <span class="callout-icon">&#10003;</span>
+            <div>
+              <strong>Prozess vollst&auml;ndig abgeschlossen.</strong><br>
+              Anfrage &rarr; Angebot &rarr; Auftrag &rarr; Bedarfsplanung &rarr; Einkauf &rarr;
+              Lohnfertigung Cobertec &rarr; Fertigung &rarr; QS &rarr; Einlagerung &rarr;
+              Versand &rarr; Rechnung &rarr; <strong>Zahlungseingang</strong>
+            </div>
+          </div>
+          <div class="result-chip">&#10003; INV/2026/00001 &ndash; Bezahlt &ndash; 571,20&nbsp;&euro;</div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">R&uuml;ckverfolgung &amp; Kontrolle</div>
+          <ul class="actions">
+            <li><strong>Lager &rsaquo; Produkte &rsaquo; K&amp;F PIA M &rsaquo; Seriennummern &rsaquo; PIA-M-0001</strong>: vollst&auml;ndige Traceability von Chassis-Eingang bis Kundenausgang.</li>
+            <li><strong>CRM</strong>: Lead als <em>Gewonnen</em> markieren.</li>
+            <li><strong>Buchhaltung &rsaquo; Berichte &rsaquo; GuV</strong>: Erl&ouml;s +480&nbsp;&euro;, Materialkosten ca. &minus;95&nbsp;&euro; (Sica 28,50 + Karton 3,20 + Schalter 1,85 + Kabel 2,10 + Rohteil 42,00 + Cobertec 18,00), DB ca. 385&nbsp;&euro;.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+  function toggleTheme() {
+    var root = document.documentElement;
+    var cur  = root.getAttribute('data-theme');
+    var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (!cur)           { root.setAttribute('data-theme', dark ? 'light' : 'dark'); }
+    else if (cur==='dark')  { root.setAttribute('data-theme', 'light'); }
+    else                { root.setAttribute('data-theme', 'dark'); }
+  }
+</script>
