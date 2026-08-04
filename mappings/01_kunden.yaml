@@ -1,0 +1,290 @@
+# ============================================================
+# Mapping: eEvolution Kunden → Odoo 19 res.partner
+# Status: SIMULIERT – Feldnamen noch nicht gegen echte DB validiert
+# Letzte Änderung: 2026-08-04
+# ============================================================
+
+meta:
+  name: Kunden
+  odoo_model: res.partner
+  priority: 1
+  depends_on:
+    - res.country (Laender)
+    - account.payment.term (Zahlungsbedingungen)
+    - product.pricelist (Preisgruppen)
+
+source:
+  system: eEvolution
+  db_type: MSSQL
+  tables:
+    - name: Adressen
+      alias: a
+      filter: "a.IsKunde = 1 AND a.Gesperrt IN (0, 1)"  # Auch gesperrte übernehmen (active=False)
+    - name: Kunden
+      alias: k
+  join: "INNER JOIN Kunden k ON k.AdressenID = a.AdressenID"
+  order_by: "a.AdressenID ASC"
+
+target:
+  model: res.partner
+
+field_mappings:
+  # --- Identifikation ---
+  - source_field: AdressenNr
+    source_table: a
+    target_field: ref
+    target_type: char
+    transform: null
+    validated: false
+    notes: "Kundennummer als interne Referenz in Odoo"
+
+  - source_field: Name1
+    source_table: a
+    target_field: name
+    target_type: char
+    transform: |
+      if Name2:
+          return f"{Name1} – {Name2}"
+      return Name1
+    validated: false
+    notes: "Name2 wird angehängt falls vorhanden"
+
+  # --- Adresse ---
+  - source_field: Strasse
+    source_table: a
+    target_field: street
+    target_type: char
+    transform: null
+    validated: false
+    notes: "In eEvolution: Straße + Hausnummer in einem Feld"
+
+  - source_field: PLZ
+    source_table: a
+    target_field: zip
+    target_type: char
+    transform: null
+    validated: false
+
+  - source_field: Ort
+    source_table: a
+    target_field: city
+    target_type: char
+    transform: null
+    validated: false
+
+  - source_field: LandID
+    source_table: a
+    target_field: country_id
+    target_type: many2one
+    transform: "Lookup: LandID → Laender.ISO2 → res.country.code"
+    validated: false
+    notes: "FK-Auflösung nötig: Laender-Tabelle abfragen"
+
+  # --- Kontakt ---
+  - source_field: Telefon
+    source_table: a
+    target_field: phone
+    target_type: char
+    transform: null
+    validated: false
+
+  - source_field: Telefon2
+    source_table: a
+    target_field: mobile
+    target_type: char
+    transform: null
+    validated: false
+    notes: "Zweites Telefon → Mobile; alternativ als Notiz"
+
+  - source_field: Email
+    source_table: a
+    target_field: email
+    target_type: char
+    transform: null
+    validated: false
+
+  - source_field: Internet
+    source_table: a
+    target_field: website
+    target_type: char
+    transform: null
+    validated: false
+
+  - source_field: Fax
+    source_table: a
+    target_field: null
+    target_type: null
+    transform: "In Bemerkung anhängen: 'Fax: {Fax}'"
+    validated: false
+    notes: "Odoo 19 hat kein Standard-Fax-Feld mehr"
+
+  # --- Steuer & Recht ---
+  - source_field: UStIdNr
+    source_table: a
+    target_field: vat
+    target_type: char
+    transform: null
+    validated: false
+    notes: "EU-Format validieren (DE + 9 Ziffern)"
+
+  # --- Konditionen ---
+  - source_field: ZahlungsbedingungID
+    source_table: k
+    target_field: property_payment_term_id
+    target_type: many2one
+    transform: "Lookup: ZahlungsbedingungID → account.payment.term (Name-Mapping)"
+    validated: false
+    notes: "KRITISCH: Zahlungsbedingungen müssen vorab in Odoo angelegt sein"
+
+  - source_field: Kreditlimit
+    source_table: k
+    target_field: credit_limit
+    target_type: float
+    transform: null
+    validated: false
+
+  - source_field: Sprache
+    source_table: k
+    target_field: lang
+    target_type: selection
+    transform: "Mapping: DE→de_DE, EN→en_US, FR→fr_FR"
+    validated: false
+
+  # --- Feststehende Werte ---
+  - source_field: null
+    source_table: null
+    target_field: customer_rank
+    target_type: integer
+    transform: "Fest: 1"
+    validated: true
+    notes: "Markiert als Kunde in Odoo"
+
+  - source_field: null
+    source_table: null
+    target_field: is_company
+    target_type: boolean
+    transform: "Fest: True"
+    validated: true
+    notes: "Alle eEvolution-Kunden sind Firmen; Ansprechpartner werden separat importiert"
+
+  - source_field: Gesperrt
+    source_table: a
+    target_field: active
+    target_type: boolean
+    transform: "Invertieren: 0 → True, 1 → False"
+    validated: false
+    notes: "Gesperrte Kunden werden als inactive importiert, nicht gelöscht"
+
+  # --- Notizen ---
+  - source_field: Bemerkung
+    source_table: a
+    target_field: comment
+    target_type: html
+    transform: "Text in <p>…</p> wrappen für Odoo HTML-Feld"
+    validated: false
+
+  # --- NICHT migriert (zu klären) ---
+  - source_field: DebitKontoNr
+    source_table: k
+    target_field: null
+    target_type: null
+    transform: null
+    validated: false
+    notes: "TODO: Debitorenkonto → nur relevant bei Buchhaltungsmigration"
+
+  - source_field: PreisGruppeID
+    source_table: k
+    target_field: property_product_pricelist
+    target_type: many2one
+    transform: "Lookup: PreisGruppeID → product.pricelist"
+    validated: false
+    notes: "TODO: Preislisten müssen vorab migriert werden"
+
+  - source_field: RabattGruppe
+    source_table: k
+    target_field: null
+    target_type: null
+    transform: null
+    validated: false
+    notes: "TODO: Rabattgruppen → Odoo-Konzept klären (Preisliste oder Rabatt-Modul)"
+
+  - source_field: Vertreter1ID
+    source_table: k
+    target_field: user_id
+    target_type: many2one
+    transform: "Lookup: Vertreter1ID → res.users (muss vorab existieren)"
+    validated: false
+    notes: "TODO: Vertreter/Außendienst-Mapping"
+
+  - source_field: Umsatzsteuerklasse
+    source_table: k
+    target_field: null
+    target_type: null
+    transform: null
+    validated: false
+    notes: "TODO: Steuerklasse → Odoo fiscal.position? Klärung nötig"
+
+# --- Ansprechpartner (eigene Import-Runde nach Firmen) ---
+contacts:
+  source_table: AdressenAnsprechpartner
+  join_key: AdressenID
+  target_model: res.partner
+  target_type_value: contact
+  field_mappings:
+    - source_field: Vorname + Nachname
+      target_field: name
+      transform: "f'{Vorname} {Nachname}'.strip()"
+      validated: false
+
+    - source_field: Anrede
+      target_field: title
+      transform: "Lookup: Herr/Frau/Dr./Prof. → res.partner.title"
+      validated: false
+
+    - source_field: Position
+      target_field: function
+      transform: null
+      validated: false
+
+    - source_field: Telefon
+      target_field: phone
+      transform: null
+      validated: false
+
+    - source_field: Mobil
+      target_field: mobile
+      transform: null
+      validated: false
+
+    - source_field: Email
+      target_field: email
+      transform: null
+      validated: false
+
+    - source_field: AdressenID
+      target_field: parent_id
+      transform: "Lookup: AdressenID → importierte res.partner.id der Firma"
+      validated: false
+      notes: "KRITISCH: Firmen müssen zuerst importiert sein"
+
+# --- Offene Fragen ---
+open_questions:
+  - id: OQ-1
+    priority: KRITISCH
+    question: "Wie heißen die Tabellen in eurer DB wirklich? (Adressen, tblAdressen, Kunde, …?)"
+    action: "01_profile_source.py laufen lassen"
+
+  - id: OQ-2
+    priority: KRITISCH
+    question: "Gibt es Customizing-Felder in Adressen/Kunden?"
+    action: "DB-Schema auf extra Spalten prüfen"
+
+  - id: OQ-3
+    priority: MITTEL
+    question: "Wie werden Firmen- vs. Privatkunden unterschieden?"
+    action: "Gibt es ein Feld IstPrivatkunde oder wird nur Name2 genutzt?"
+
+  - id: OQ-4
+    priority: MITTEL
+    question: "Mehrere Lieferadressen pro Kunde?"
+    action: "Tabelle prüfen (LieferAdressen? Adressen mit IsLieferadresse?)"
