@@ -76,74 +76,92 @@ def abfragen(conn, sql, params=None):
 SQL_ARTIKEL = """
     SELECT
         a.LFDNR        AS ID,
-        a.ARTNR        AS Artikelnummer,
-        a.ARTBEZ       AS Bezeichnung,
-        a.ARTBEZ2      AS Bezeichnung2,
-        m.EINHEITKUERZEL AS Einheit,
-        a.VK1          AS VK_Preis,
-        a.EINKPREIS    AS EK_Preis,
-        al.LANGTEXT    AS Langtext
+        a.ARTNR1       AS Artikelnummer,
+        a.ABEZ1        AS Bezeichnung,
+        a.ABEZ2        AS Bezeichnung2,
+        a.MENGENSCHL   AS Einheit,
+        a.VKPR1        AS VK_Preis,
+        a.EKPR         AS EK_Preis,
+        al.CONTENT     AS Langtext
     FROM ARTIKEL a
-    LEFT JOIN MENGENSCHL m ON m.LFDNR = a.EINHEITID
-    LEFT JOIN ARTIKELLONG al ON al.ARTID = a.LFDNR
-    WHERE a.ARTBEZ LIKE ? OR a.ARTNR LIKE ?
-    ORDER BY a.ARTNR
+    LEFT JOIN (
+        SELECT LFDARTNR, MAX(CONTENT) AS CONTENT
+        FROM ARTIKELLONG
+        GROUP BY LFDARTNR
+    ) al ON al.LFDARTNR = a.LFDNR
+    WHERE a.ABEZ1 LIKE ? OR a.ARTNR1 LIKE ?
+    ORDER BY a.ARTNR1
 """
 
 SQL_STUECKLISTE = """
     SELECT
-        p.LFDNR        AS SB_ID,
-        a_end.ARTNR    AS Endprodukt_Nr,
-        a_end.ARTBEZ   AS Endprodukt,
-        a_komp.ARTNR   AS Komponente_Nr,
-        a_komp.ARTBEZ  AS Komponente,
+        p.LFD_NR       AS SB_ID,
+        a_end.ARTNR1   AS Endprodukt_Nr,
+        a_end.ABEZ1    AS Endprodukt,
+        a_komp.ARTNR1  AS Komponente_Nr,
+        a_komp.ABEZ1   AS Komponente,
         i.MENGE        AS Menge,
-        m.EINHEITKUERZEL AS Einheit,
-        a_komp.EINKPREIS AS EK_Preis
+        i.MENGENSCHL   AS Einheit,
+        a_komp.EKPR    AS EK_Preis
     FROM PRODLIST p
-    JOIN ARTIKEL a_end ON a_end.LFDNR = p.ARTID
-    JOIN PRODINHALT i ON i.PRODLISTID = p.LFDNR
-    JOIN ARTIKEL a_komp ON a_komp.LFDNR = i.ARTID
-    LEFT JOIN MENGENSCHL m ON m.LFDNR = i.EINHEITID
-    WHERE a_end.ARTBEZ LIKE ? OR a_end.ARTNR LIKE ?
-    ORDER BY p.LFDNR, i.LFDNR
+    JOIN ARTIKEL a_end ON a_end.LFDNR = p.ART_NR
+    JOIN PRODINHALT i ON i.LIST_NR = p.LFD_NR
+    JOIN ARTIKEL a_komp ON a_komp.LFDNR = i.ART_NR
+    WHERE a_end.ABEZ1 LIKE ? OR a_end.ARTNR1 LIKE ?
+    ORDER BY p.LFD_NR, i.LFD_NR
 """
 
 SQL_STUECKLISTE_FALLBACK = """
     SELECT
-        a_end.ARTNR    AS Endprodukt_Nr,
-        a_end.ARTBEZ   AS Endprodukt,
-        a_komp.ARTNR   AS Komponente_Nr,
-        a_komp.ARTBEZ  AS Komponente,
-        s.MENGE        AS Menge,
-        m.EINHEITKUERZEL AS Einheit,
-        a_komp.EINKPREIS AS EK_Preis
+        a_end.ARTNR1      AS Endprodukt_Nr,
+        a_end.ABEZ1       AS Endprodukt,
+        a_komp.ARTNR1     AS Komponente_Nr,
+        a_komp.ABEZ1      AS Komponente,
+        s.MENGE           AS Menge,
+        a_komp.MENGENSCHL AS Einheit,
+        a_komp.EKPR       AS EK_Preis
     FROM ARTSTUELI s
-    JOIN ARTIKEL a_end ON a_end.LFDNR = s.UEBERARTIKELID
-    JOIN ARTIKEL a_komp ON a_komp.LFDNR = s.KOMP_ARTID
-    LEFT JOIN MENGENSCHL m ON m.LFDNR = s.EINHEITID
-    WHERE a_end.ARTBEZ LIKE ? OR a_end.ARTNR LIKE ?
-    ORDER BY s.LFDNR
+    JOIN ARTIKEL a_end ON a_end.LFDNR = s.LFDARTNR1
+    JOIN ARTIKEL a_komp ON a_komp.LFDNR = s.LFDARTNR2
+    WHERE a_end.ABEZ1 LIKE ? OR a_end.ARTNR1 LIKE ?
+    ORDER BY s.LFDARTNR1, s.LFDARTNR2
 """
 
 SQL_LIEFERANTEN = """
     SELECT DISTINCT
-        a_komp.ARTNR   AS Komponente_Nr,
-        a_komp.ARTBEZ  AS Komponente,
-        ad.ADRNR       AS Lieferant_ID,
-        ad.NAME1       AS Lieferant,
-        ad.NAME2       AS Lieferant2,
-        ad.ORT         AS Ort,
-        l.EINKPREIS    AS EK_Preis,
-        l.LIEFERZEIT   AS Lieferzeit_Tage
-    FROM ARTLIEFERANT l
-    JOIN ARTIKEL a_komp ON a_komp.LFDNR = l.ARTID
-    JOIN ADRESS ad ON ad.ADRNR = l.ADRNR
-    JOIN PRODINHALT pi ON pi.ARTID = a_komp.LFDNR
-    JOIN PRODLIST pl ON pl.LFDNR = pi.PRODLISTID
-    JOIN ARTIKEL a_end ON a_end.LFDNR = pl.ARTID
-    WHERE a_end.ARTBEZ LIKE ? OR a_end.ARTNR LIKE ?
-    ORDER BY a_komp.ARTNR, ad.NAME1
+        a_komp.ARTNR1  AS Komponente_Nr,
+        a_komp.ABEZ1   AS Komponente,
+        l.ADRNR        AS Lieferant_ID,
+        l.NAME1        AS Lieferant,
+        l.NAME2        AS Lieferant2,
+        l.ORT          AS Ort,
+        a_komp.EKPR    AS EK_Preis,
+        NULL           AS Lieferzeit_Tage
+    FROM PRODLIST p
+    JOIN ARTIKEL a_end ON a_end.LFDNR = p.ART_NR
+    JOIN PRODINHALT i ON i.LIST_NR = p.LFD_NR
+    JOIN ARTIKEL a_komp ON a_komp.LFDNR = i.ART_NR
+    LEFT JOIN LIEFERANT l ON l.ADRNR = a_komp.LFDLIEFNR
+    WHERE a_end.ABEZ1 LIKE ? OR a_end.ARTNR1 LIKE ?
+    ORDER BY a_komp.ARTNR1, l.NAME1
+"""
+
+SQL_LIEFERANTEN_FALLBACK = """
+    SELECT DISTINCT
+        a_komp.ARTNR1     AS Komponente_Nr,
+        a_komp.ABEZ1      AS Komponente,
+        l.ADRNR           AS Lieferant_ID,
+        l.NAME1           AS Lieferant,
+        l.NAME2           AS Lieferant2,
+        l.ORT             AS Ort,
+        a_komp.EKPR       AS EK_Preis,
+        NULL              AS Lieferzeit_Tage
+    FROM ARTSTUELI s
+    JOIN ARTIKEL a_end ON a_end.LFDNR = s.LFDARTNR1
+    JOIN ARTIKEL a_komp ON a_komp.LFDNR = s.LFDARTNR2
+    LEFT JOIN LIEFERANT l ON l.ADRNR = a_komp.LFDLIEFNR
+    WHERE a_end.ABEZ1 LIKE ? OR a_end.ARTNR1 LIKE ?
+    ORDER BY a_komp.ARTNR1, l.NAME1
 """
 
 
@@ -453,16 +471,18 @@ def main():
 
     print("[2] Lese Stückliste (PRODLIST)...")
     stk = abfragen(conn, SQL_STUECKLISTE, [like, like])
-    if not stk:
+    use_artstueli = not stk
+    if use_artstueli:
         print("    PRODLIST leer – versuche ARTSTUELI...")
         stk = abfragen(conn, SQL_STUECKLISTE_FALLBACK, [like, like])
     print(f"    {len(stk)} Positionen")
 
     print("[3] Lese Lieferanten...")
     try:
-        lieferanten = abfragen(conn, SQL_LIEFERANTEN, [like, like])
-    except Exception:
-        print("    ARTLIEFERANT nicht gefunden – Lieferanten-Blatt bleibt leer")
+        sql_lief = SQL_LIEFERANTEN_FALLBACK if use_artstueli else SQL_LIEFERANTEN
+        lieferanten = abfragen(conn, sql_lief, [like, like])
+    except Exception as e:
+        print(f"    Lieferanten-Abfrage fehlgeschlagen ({e}) – Blatt bleibt leer")
         lieferanten = []
     print(f"    {len(lieferanten)} Lieferanten-Einträge")
 
