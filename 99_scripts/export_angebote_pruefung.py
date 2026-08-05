@@ -104,20 +104,22 @@ def erkunde(conn):
         h_set
     )
     # Positionen
-    art_col  = erste(["ARTNR1", "ARTNR", "ARTIKELNR"],           p_set)
-    bez_col  = erste(["ABEZ1", "ARTBEZ", "BEZEICHNUNG", "BEZ"],  p_set)
-    mng_col  = erste(["MENGE", "ANZAHL"],                         p_set)
-    vk_col   = erste(["VKPR1", "VK1", "VKPREIS", "PREIS", "EP"], p_set)
-    ek_col   = erste(["EKPR", "EK1", "EKPREIS"],                  p_set)
+    # LFDARTNR = numerischer FK auf ARTIKEL.LFDNR (kein ARTNR1 direkt in ANGAUFPOS)
+    art_col  = erste(["LFDARTNR", "ARTNR1", "ARTNR", "ARTIKELNR"],  p_set)
+    bez_col  = erste(["ABWABEZ1", "ABEZ1", "ARTBEZ", "BEZEICHNUNG"], p_set)
+    mng_col  = erste(["BESTMENGE", "MENGE", "ANZAHL"],                p_set)
+    vk_col   = erste(["PREIS", "VKPR1", "VK1", "VKPREIS", "EP"],    p_set)
+    ek_col   = erste(["EKPR", "EK1", "EKPREIS"],                      p_set)
     pos_wert = erste(["GESAMTPREIS", "POSITIONSWERT", "BETRAG",
-                      "ZEILENPREIS", "POSBET", "NETTO"],           p_set)
+                      "ZEILENPREIS", "POSBET"],                        p_set)
     # FK Position → Kopf
     fk = erste(
-        ["ANGAUFGUTLFDNR", "ANGAUFLFDNR", "LFDANGAUFGUT",
-         "KOPFLFDNR",      "HEADLFDNR",   "BELEGLFDNR",
-         "ANGAUFTLFDNR"],
+        ["LFDANGAUFGUTNR", "ANGAUFGUTLFDNR", "ANGAUFLFDNR",
+         "LFDANGAUFGUT",   "KOPFLFDNR",      "HEADLFDNR"],
         p_set
     )
+    # Ist LFDARTNR ein numerischer FK? Dann JOIN ARTIKEL nötig
+    art_ist_fk = (art_col == "LFDARTNR")
     # Kopf-Infos
     knd_col = erste(["KNDNR", "ADRNR", "KUNDENNR"], h_set)
     dat_col = erste(["ERFASSDATUM", "DATUM", "BELEGDATUM", "ERFDATUM"], h_set)
@@ -125,11 +127,12 @@ def erkunde(conn):
     vtr_col = erste(["VERMITNR", "VERTRETERNR", "SACHBEARBEITNR", "BETREUNR"], h_set)
 
     info = dict(
-        wert_kopf=wert_kopf, art_col=art_col, bez_col=bez_col,
-        mng_col=mng_col,     vk_col=vk_col,   ek_col=ek_col,
-        pos_wert=pos_wert,   fk=fk,
-        knd_col=knd_col,     dat_col=dat_col,
-        sta_col=sta_col,     vtr_col=vtr_col,
+        wert_kopf=wert_kopf,  art_col=art_col,    bez_col=bez_col,
+        mng_col=mng_col,      vk_col=vk_col,      ek_col=ek_col,
+        pos_wert=pos_wert,    fk=fk,
+        knd_col=knd_col,      dat_col=dat_col,
+        sta_col=sta_col,      vtr_col=vtr_col,
+        art_ist_fk=art_ist_fk,
     )
     print("    Erkannte Felder:")
     for k, v in info.items():
@@ -142,34 +145,38 @@ def erkunde(conn):
 def lade_angebote(conn, info):
     print(f"\n[2] Lade Kunden-Angebote (ANGEBOT=1), Wert < {LIMIT_KLEIN:,.0f} € oder > {LIMIT_GROSS:,.0f} € …")
 
-    wk  = info["wert_kopf"]
-    fk  = info["fk"]
-    art = info["art_col"]
-    bez = info["bez_col"]
-    mng = info["mng_col"]
-    vk  = info["vk_col"]
-    ek  = info["ek_col"]
-    pw  = info["pos_wert"]
-    knd = info["knd_col"]
-    dat = info["dat_col"]
-    sta = info["sta_col"]
-    vtr = info["vtr_col"]
+    wk      = info["wert_kopf"]
+    fk      = info["fk"]
+    art     = info["art_col"]
+    bez     = info["bez_col"]
+    mng     = info["mng_col"]
+    vk      = info["vk_col"]
+    ek      = info["ek_col"]
+    pw      = info["pos_wert"]
+    knd     = info["knd_col"]
+    dat     = info["dat_col"]
+    sta     = info["sta_col"]
+    vtr     = info["vtr_col"]
+    art_fk  = info["art_ist_fk"]   # True wenn LFDARTNR → JOIN ARTIKEL nötig
 
     if not fk:
         print("    FEHLER: FK-Spalte ANGAUFPOS→ANGAUFGUT nicht erkannt.")
-        print(f"    Bekannte ANGAUFPOS-Spalten oben prüfen.")
         return [], []
 
-    # Wert-Berechnung
+    print(f"    FK={fk}  Art={art}(fk={art_fk})  Menge={mng}  Preis={vk}")
+
+    # Wert = BESTMENGE × PREIS, summiert aus ANGAUFPOS
     if wk:
         where_w = f"h.{wk} < {LIMIT_KLEIN} OR h.{wk} > {LIMIT_GROSS}"
         w_sel   = f"h.{wk} AS Auftragswert"
     elif vk and mng:
-        sub = f"(SELECT COALESCE(SUM(pp.{mng}*pp.{vk}),0) FROM ANGAUFPOS pp WHERE pp.{fk}=h.LFDNR)"
+        sub = (f"(SELECT COALESCE(SUM(pp.{mng}*pp.{vk}),0)"
+               f" FROM ANGAUFPOS pp WHERE pp.{fk}=h.LFDNR)")
         where_w = f"{sub} < {LIMIT_KLEIN} OR {sub} > {LIMIT_GROSS}"
         w_sel   = f"{sub} AS Auftragswert"
     elif pw:
-        sub = f"(SELECT COALESCE(SUM(pp.{pw}),0) FROM ANGAUFPOS pp WHERE pp.{fk}=h.LFDNR)"
+        sub = (f"(SELECT COALESCE(SUM(pp.{pw}),0)"
+               f" FROM ANGAUFPOS pp WHERE pp.{fk}=h.LFDNR)")
         where_w = f"{sub} < {LIMIT_KLEIN} OR {sub} > {LIMIT_GROSS}"
         w_sel   = f"{sub} AS Auftragswert"
     else:
@@ -177,7 +184,7 @@ def lade_angebote(conn, info):
         where_w = "1=1"
         w_sel   = "NULL AS Auftragswert"
 
-    felder = ["h.LFDNR AS Angebot_ID", "h.ANGEBOT", "h.AUFTRAG"]
+    felder = ["h.LFDNR AS Angebot_ID"]
     if knd: felder.append(f"h.{knd} AS Kunden_Nr")
     if dat: felder.append(f"h.{dat} AS Datum")
     if sta: felder.append(f"h.{sta} AS Status")
@@ -195,13 +202,8 @@ def lade_angebote(conn, info):
     try:
         angebote = q(conn, sql)
     except Exception as e:
-        print(f"    Hauptabfrage fehlgeschlagen: {e}")
-        print("    Fallback: alle Angebote laden …")
-        sql_fb = "SELECT TOP 1000 * FROM ANGAUFGUT WHERE ANGEBOT=1 ORDER BY LFDNR DESC"
-        angebote = q(conn, sql_fb)
-        for a in angebote:
-            a.setdefault("Angebot_ID", a.get("LFDNR"))
-            a.setdefault("Auftragswert", 0)
+        print(f"    Abfrage fehlgeschlagen: {e}")
+        return [], []
 
     print(f"    {len(angebote)} Angebote gefunden")
     if not angebote:
@@ -214,32 +216,34 @@ def lade_angebote(conn, info):
 
     id_liste = ", ".join(ids[:500])
 
-    pos_felder = [f"p.{fk} AS Angebot_ID"]
-    if art: pos_felder.append(f"p.{art} AS Artikelnummer")
-    if bez: pos_felder.append(f"p.{bez} AS Bezeichnung")
-    if mng: pos_felder.append(f"p.{mng} AS Menge")
-    if vk:  pos_felder.append(f"p.{vk} AS VK_Preis")
-    if ek:  pos_felder.append(f"p.{ek} AS EK_Preis")
-    if pw:  pos_felder.append(f"p.{pw} AS Positionswert")
-
-    # Langtext
-    if art:
-        sel_lang = ", ".join(pos_felder) + """,
-            al.CONTENT AS Langtext,
-            ar.EKPR    AS EK_Stamm,
-            ar.VKPR1   AS VK_Stamm,
-            ar.MENGENSCHL AS Einheit"""
-        join_lang = f"""
-            LEFT JOIN ARTIKEL ar ON ar.ARTNR1 = p.{art}
-            LEFT JOIN (
-                SELECT LFDARTNR, MAX(CONTENT) AS CONTENT
-                FROM ARTIKELLONG GROUP BY LFDARTNR
-            ) al ON al.LFDARTNR = ar.LFDNR"""
+    if art_fk:
+        # LFDARTNR ist numerischer FK → JOIN ARTIKEL für Artikelnummer + Bezeichnung
+        sel_lang = f"""
+            p.{fk}            AS Angebot_ID,
+            p.POSNR           AS Pos_Nr,
+            ar.ARTNR1         AS Artikelnummer,
+            ar.ABEZ1          AS Bezeichnung,
+            p.ABWABEZ1        AS Pos_Bezeichnung,
+            ar.MENGENSCHL     AS Einheit,
+            p.{mng or 'BESTMENGE'} AS Menge,
+            p.{vk  or 'PREIS'}     AS VK_Preis,
+            ar.EKPR           AS EK_Preis,
+            p.LANGTEXT        AS Pos_Langtext,
+            ar.LFDNR          AS Artikel_ID
+        """
+        join_lang = "LEFT JOIN ARTIKEL ar ON ar.LFDNR = p.LFDARTNR"
     else:
-        sel_lang = ", ".join(pos_felder)
+        pos_felder = [f"p.{fk} AS Angebot_ID", "p.POSNR AS Pos_Nr"]
+        if art: pos_felder.append(f"p.{art} AS Artikelnummer")
+        if bez: pos_felder.append(f"p.{bez} AS Bezeichnung")
+        if mng: pos_felder.append(f"p.{mng} AS Menge")
+        if vk:  pos_felder.append(f"p.{vk} AS VK_Preis")
+        if ek:  pos_felder.append(f"p.{ek} AS EK_Preis")
+        if pw:  pos_felder.append(f"p.{pw} AS Positionswert")
+        sel_lang  = ", ".join(pos_felder)
         join_lang = ""
 
-    order_p = f"p.{fk}" + (f", p.{art}" if art else "")
+    order_p = f"p.{fk}, p.POSNR"
 
     sql_pos = f"""
         SELECT {sel_lang}
