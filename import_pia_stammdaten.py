@@ -42,7 +42,13 @@ ODOO_DB     = os.getenv("ODOO_DB", "")
 ODOO_USER   = os.getenv("ODOO_USER", "admin")
 ODOO_APIKEY = os.getenv("ODOO_APIKEY", "")
 
-EXT_PREFIX = "ev_import"   # Modul-Name für ir.model.data External IDs
+# External-ID-Schema: ev_kuf.<typ>_<eEvolution-ID>
+#   ev_kuf.adr_4711        → res.partner  (ADRESS.ADRNR)
+#   ev_kuf.product_823     → product.template (ARTIKEL.LFDNR)
+#   ev_kuf.bom_12          → mrp.bom (PRODLIST.LFDNR)
+#   ev_kuf.zahlbeding_3    → account.payment.term (ZAHLBEDING.LFDNR)
+# Zweiter Lauf: External ID gefunden → write() statt create() → keine Duplikate.
+EXT_MODULE = "ev_kuf"
 
 
 # ── eEvolution-Verbindung ───────────────────────────────────────────────────
@@ -87,12 +93,17 @@ def odoo_call(models, uid, model, method, args, kwargs=None):
     return models.execute_kw(ODOO_DB, uid, ODOO_APIKEY, model, method, args, kwargs or {})
 
 
-def ext_id_key(prefix, record_id):
-    return f"{EXT_PREFIX}.{prefix}_{record_id}"
+def ext_id(typ, ee_id):
+    """Baut External-ID-String: ev_kuf.<typ>_<ee_id>"""
+    return f"{EXT_MODULE}.{typ}_{ee_id}"
 
 
 def odoo_upsert(models, uid, odoo_model, ext_key, vals):
-    """Legt Datensatz an oder aktualisiert ihn (idempotent via External ID)."""
+    """
+    Idempotenter Upsert via ir.model.data (External ID).
+    Erster Lauf  → create()  + External ID anlegen
+    Zweiter Lauf → write()   auf vorhandenen Datensatz
+    """
     module, name = ext_key.split(".", 1)
     existing = odoo_call(models, uid, "ir.model.data", "search_read",
         [[["module", "=", module], ["name", "=", name], ["model", "=", odoo_model]]],
@@ -103,8 +114,10 @@ def odoo_upsert(models, uid, odoo_model, ext_key, vals):
         return rec_id, "updated"
     rec_id = odoo_call(models, uid, odoo_model, "create", [vals])
     odoo_call(models, uid, "ir.model.data", "create", [{
-        "name": name, "module": module,
-        "model": odoo_model, "res_id": rec_id,
+        "name": name,
+        "module": module,
+        "model": odoo_model,
+        "res_id": rec_id,
         "noupdate": False,
     }])
     return rec_id, "created"
@@ -270,7 +283,7 @@ def lese_einheiten(cur):
 # ── Odoo: Zahlungsbedingung anlegen ─────────────────────────────────────────
 
 def odoo_sync_zahlbeding(models, uid, zb):
-    ext_key = ext_id_key("zahlbeding", zb["lfdnr"])
+    ext_key = ext_id("zahlbeding", zb["lfdnr"])
     tage = zb.get("zahlungstage") or 30
     vals = {
         "name": zb["bezeichnung"],
@@ -288,7 +301,8 @@ def odoo_sync_zahlbeding(models, uid, zb):
 # ── Odoo: Lieferant anlegen ─────────────────────────────────────────────────
 
 def odoo_sync_lieferant(models, uid, lief, laender_map, zahlbeding_map, odoo_zb_ids):
-    ext_key = ext_id_key("adr", lief["adrnr"])
+    # External ID trägt die eEvolution ADRNR → eindeutige Rückverfolgung
+    ext_key = ext_id("adr", lief["adrnr"])
 
     # Land aufloesen
     country_id = False
@@ -308,6 +322,7 @@ def odoo_sync_lieferant(models, uid, lief, laender_map, zahlbeding_map, odoo_zb_
         "name": name,
         "is_company": True,
         "supplier_rank": 1,
+        "ref": str(lief["adrnr"]),   # eEvolution ADRNR sichtbar im Partner-Formular
         "street": lief.get("strasse") or "",
         "zip": lief.get("plz") or "",
         "city": lief.get("ort") or "",
@@ -342,7 +357,8 @@ def odoo_uom_id(models, uid, einheit_kuerzel):
 
 
 def odoo_sync_produkt(models, uid, art, einheiten_map, ist_fertigprodukt=False):
-    ext_key = ext_id_key("product", art["lfdnr"])
+    # External ID trägt die eEvolution ARTIKEL.LFDNR
+    ext_key = ext_id("product", art["lfdnr"])
 
     uom_kuerzel = ""
     if art.get("einheitid") and art["einheitid"] in einheiten_map:
@@ -416,7 +432,13 @@ def odoo_sync_stueckliste(models, uid, bom_data, produkt_odoo_id, odoo_produkte)
         print("  [SKP] Keine Stücklisten-Positionen übertragbar.")
         return None
 
-    ext_key = ext_id_key("bom", produkt_odoo_id)
+    # External ID aus eEvolution PRODLIST.LFDNR (nicht Odoo-ID!)
+    if bom_data["typ"] == "PRODLIST" and bom_data.get("kopf"):
+        ee_bom_id = bom_data["kopf"]["lfdnr"]
+    else:
+        ee_bom_id = f"art_{produkt_odoo_id}"   # Fallback ARTSTUELI
+    ext_key = ext_id("bom", ee_bom_id)
+
     vals = {
         "product_tmpl_id": produkt_odoo_id,
         "product_id": pp_id,
@@ -425,7 +447,7 @@ def odoo_sync_stueckliste(models, uid, bom_data, produkt_odoo_id, odoo_produkte)
         "bom_line_ids": bom_lines,
     }
     rec_id, action = odoo_upsert(models, uid, "mrp.bom", ext_key, vals)
-    print(f"  Stückliste → {action} mit {len(bom_lines)} Position(en) (id={rec_id})")
+    print(f"  Stückliste (EE-ID={ee_bom_id}) → {action} mit {len(bom_lines)} Pos. (id={rec_id})")
     return rec_id
 
 
