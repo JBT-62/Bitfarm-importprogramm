@@ -4,3 +4,7 @@ __pycache__/
 eevo_profil.txt
 *.csv
 *.log
+# Schema-Cache committen (kein Geheimnis, nur Metadaten)
+# eevo_schema.json  ← absichtlich NICHT ignoriert
+# Excel-Prüfdateien lokal behalten
+*.xlsx
