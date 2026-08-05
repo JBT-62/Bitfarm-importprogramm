@@ -113,21 +113,30 @@ def erkunde_schema(conn):
     pos_wert = erste(["GESAMTPREIS", "POSITIONSWERT", "BETRAG",
                       "ZEILENPREIS", "POSBET"],                 pos_set)
 
+    # ── PK der Kopftabelle ────────────────────────────────────────────────────
+    pk_col = erste(
+        ["LFDANFRAGE", "LFDNR", "ANFRAGENR", "ID"],
+        anf_set
+    )
+
     # ── FK Kopf → Position ────────────────────────────────────────────────────
     fk = erste(
-        ["ANFRAGELFDNR", "ANFRAGEID", "KOPFLFDNR",
-         "LFDANFRAGE",   "HEADLFDNR", "BELEGLFDNR"],
+        ["LFDANFRAGE", "ANFRAGELFDNR", "ANFRAGEID",
+         "KOPFLFDNR",  "HEADLFDNR",   "BELEGLFDNR"],
         pos_set
     )
 
     # ── Kopf-Infospalten ──────────────────────────────────────────────────────
-    knd_col  = erste(["KNDNR", "ADRNR", "KUNDENNR"], anf_set)
-    dat_col  = erste(["DATUM", "ERFASSDATUM", "BELEGDATUM", "ERFDATUM"], anf_set)
+    knd_col  = erste(["KNDNR", "ADRNR", "KUNDENNR", "LIEFNR"], anf_set)
+    dat_col  = erste(["ANFRAGEDATUM", "DATUM", "ERFASSDATUM",
+                      "BELEGDATUM",   "ERFDATUM"], anf_set)
     sta_col  = erste(["STATUS", "ERLEDIGT"], anf_set)
-    nr_col   = erste(["BELEGNR", "ANFRAGNR", "LFDNR"], anf_set)
-    name_col = erste(["NAME1", "MATCHCODE", "SUCHBEGRIFF"], anf_set)
+    nr_col   = erste(["LFDANFRAGE", "BELEGNR", "ANFRAGNR", "LFDNR"], anf_set)
+    bez_kopf = erste(["ANFRAGEBEZ", "BEZEICHNUNG", "BETREFF", "VORTEXT"], anf_set)
+    anfrager = erste(["ANFRAGER", "SACHBEARBEITNR", "NAME1"], anf_set)
 
     info = {
+        "pk_col":    pk_col,
         "wert_kopf": wert_kopf,
         "art_col":   art_col,
         "bez_col":   bez_col,
@@ -140,7 +149,8 @@ def erkunde_schema(conn):
         "dat_col":   dat_col,
         "sta_col":   sta_col,
         "nr_col":    nr_col,
-        "name_col":  name_col,
+        "bez_kopf":  bez_kopf,
+        "anfrager":  anfrager,
     }
     print("    Erkannte Felder:")
     for k, v in info.items():
@@ -154,6 +164,7 @@ def erkunde_schema(conn):
 def lade_anfragen(conn, info):
     print(f"\n[2] Suche Anfragen  < {LIMIT_KLEIN:,.0f} € ODER > {LIMIT_GROSS:,.0f} € …")
 
+    pk       = info["pk_col"]
     fk       = info["fk"]
     art      = info["art_col"]
     bez      = info["bez_col"]
@@ -164,78 +175,79 @@ def lade_anfragen(conn, info):
     knd      = info["knd_col"]
     dat      = info["dat_col"]
     sta      = info["sta_col"]
-    nr       = info["nr_col"]
-    name     = info["name_col"]
+    bkopf    = info["bez_kopf"]
+    anfrgr   = info["anfrager"]
     wk       = info["wert_kopf"]
 
+    if not pk:
+        print("    FEHLER: PK-Spalte in ANFRAGE nicht erkannt.")
+        return [], []
     if not fk:
         print("    FEHLER: FK-Spalte ANFRAGE→ANFRAGEPOS nicht erkannt.")
-        print("    Bitte ANFRAGEPOS-Spalten manuell prüfen (suche_pia_anfrage2.py).")
         return [], []
+
+    print(f"    PK={pk}  FK={fk}  Preis={vk}  Menge={mng}")
 
     # Auftragswert: entweder aus Kopftabelle oder per Summe aus Positionen
     if wk:
-        # Wert direkt im Kopf
         where_wert = f"h.{wk} < {LIMIT_KLEIN} OR h.{wk} > {LIMIT_GROSS}"
         wert_select = f"h.{wk} AS Auftragswert"
     elif vk and mng:
-        # Wert als Subquery aus ANFRAGEPOS berechnen
         where_wert = f"""
             (SELECT COALESCE(SUM(pp.{mng} * pp.{vk}), 0)
-             FROM ANFRAGEPOS pp WHERE pp.{fk} = h.LFDNR)
+             FROM ANFRAGEPOS pp WHERE pp.{fk} = h.{pk})
             < {LIMIT_KLEIN}
             OR
             (SELECT COALESCE(SUM(pp.{mng} * pp.{vk}), 0)
-             FROM ANFRAGEPOS pp WHERE pp.{fk} = h.LFDNR)
+             FROM ANFRAGEPOS pp WHERE pp.{fk} = h.{pk})
             > {LIMIT_GROSS}
         """
         wert_select = f"""
             (SELECT COALESCE(SUM(pp.{mng} * pp.{vk}), 0)
-             FROM ANFRAGEPOS pp WHERE pp.{fk} = h.LFDNR) AS Auftragswert
+             FROM ANFRAGEPOS pp WHERE pp.{fk} = h.{pk}) AS Auftragswert
         """
     elif pos_wert:
         where_wert = f"""
             (SELECT COALESCE(SUM(pp.{pos_wert}), 0)
-             FROM ANFRAGEPOS pp WHERE pp.{fk} = h.LFDNR)
+             FROM ANFRAGEPOS pp WHERE pp.{fk} = h.{pk})
             < {LIMIT_KLEIN}
             OR
             (SELECT COALESCE(SUM(pp.{pos_wert}), 0)
-             FROM ANFRAGEPOS pp WHERE pp.{fk} = h.LFDNR)
+             FROM ANFRAGEPOS pp WHERE pp.{fk} = h.{pk})
             > {LIMIT_GROSS}
         """
         wert_select = f"""
             (SELECT COALESCE(SUM(pp.{pos_wert}), 0)
-             FROM ANFRAGEPOS pp WHERE pp.{fk} = h.LFDNR) AS Auftragswert
+             FROM ANFRAGEPOS pp WHERE pp.{fk} = h.{pk}) AS Auftragswert
         """
     else:
-        print("    WARNUNG: Keine Wert-/Preisspalte erkannt – lade alle Anfragen.")
+        print("    WARNUNG: Keine Preisspalte → lade alle Anfragen ohne Wertfilter.")
         where_wert = "1=1"
         wert_select = "NULL AS Auftragswert"
 
-    # Kopf-SELECT aufbauen
-    kopf_felder = ["h.LFDNR AS Anfrage_ID"]
-    if nr and nr != "LFDNR":    kopf_felder.append(f"h.{nr} AS Belegnummer")
-    if knd:                      kopf_felder.append(f"h.{knd} AS Kunden_Nr")
-    if name:                     kopf_felder.append(f"h.{name} AS Kunde")
-    if dat:                      kopf_felder.append(f"h.{dat} AS Datum")
-    if sta:                      kopf_felder.append(f"h.{sta} AS Status")
+    # Kopf-SELECT aufbauen (nur vorhandene Spalten)
+    kopf_felder = [f"h.{pk} AS Anfrage_ID"]
+    if bkopf:   kopf_felder.append(f"h.{bkopf} AS Bezeichnung")
+    if anfrgr:  kopf_felder.append(f"h.{anfrgr} AS Anfrager")
+    if knd:     kopf_felder.append(f"h.{knd} AS Lieferant_Nr")
+    if dat:     kopf_felder.append(f"h.{dat} AS Datum")
+    if sta:     kopf_felder.append(f"h.{sta} AS Erledigt")
     kopf_felder.append(wert_select)
 
     sql_anfragen = f"""
         SELECT {', '.join(kopf_felder)}
         FROM ANFRAGE h
         WHERE ({where_wert})
-        ORDER BY h.LFDNR DESC
+        ORDER BY h.{pk} DESC
     """
 
     try:
         anfragen = q(conn, sql_anfragen)
     except Exception as e:
         print(f"    Hauptabfrage fehlgeschlagen: {e}")
-        print("    Versuche einfachere Abfrage (alle Anfragen, ohne Wertfilter) …")
-        sql_einfach = "SELECT TOP 200 * FROM ANFRAGE ORDER BY LFDNR DESC"
+        print("    Fallback: alle Anfragen laden, dann nachfiltern …")
+        sql_einfach = f"SELECT TOP 500 * FROM ANFRAGE ORDER BY {pk} DESC"
         anfragen = q(conn, sql_einfach)
-        # Nachfiltern
         result = []
         for a in anfragen:
             wert = a.get("Auftragswert") or a.get(wk or "") or 0
@@ -246,6 +258,10 @@ def lade_anfragen(conn, info):
             if wert < LIMIT_KLEIN or wert > LIMIT_GROSS:
                 result.append(a)
         anfragen = result
+        # Anfrage_ID normalisieren
+        for a in anfragen:
+            if "Anfrage_ID" not in a:
+                a["Anfrage_ID"] = a.get(pk)
 
     print(f"    {len(anfragen)} Anfragen gefunden")
 
@@ -253,8 +269,8 @@ def lade_anfragen(conn, info):
         return [], []
 
     # ── Positionen laden ──────────────────────────────────────────────────────
-    ids = [str(int(a["Anfrage_ID"])) for a in anfragen if a.get("Anfrage_ID")]
-    id_liste = ", ".join(ids[:200])
+    ids = [str(int(a["Anfrage_ID"])) for a in anfragen if a.get("Anfrage_ID") is not None]
+    id_liste = ", ".join(ids[:500])
 
     pos_felder = [f"p.{fk} AS Anfrage_ID"]
     if art:      pos_felder.append(f"p.{art} AS Artikelnummer")
@@ -273,19 +289,22 @@ def lade_anfragen(conn, info):
                 SELECT LFDARTNR, MAX(CONTENT) AS CONTENT
                 FROM ARTIKELLONG GROUP BY LFDARTNR
             ) al ON al.LFDARTNR = (
-                SELECT TOP 1 LFDNR FROM ARTIKEL WHERE ARTNR1 = p.{art}
+                SELECT TOP 1 a2.LFDNR FROM ARTIKEL a2 WHERE a2.ARTNR1 = p.{art}
             )
         """
     else:
         pos_felder_sql = ", ".join(pos_felder)
         join_lang = ""
 
+    # ANFRAGEPOS hat keinen eigenen LFDNR → ORDER BY FK + Artikelnummer
+    order_pos = f"p.{fk}" + (f", p.{art}" if art else "")
+
     sql_pos = f"""
         SELECT {pos_felder_sql}
         FROM ANFRAGEPOS p
         {join_lang}
         WHERE p.{fk} IN ({id_liste})
-        ORDER BY p.{fk}, p.LFDNR
+        ORDER BY {order_pos}
     """
 
     try:
@@ -296,7 +315,7 @@ def lade_anfragen(conn, info):
             SELECT {', '.join(pos_felder)}
             FROM ANFRAGEPOS p
             WHERE p.{fk} IN ({id_liste})
-            ORDER BY p.{fk}, p.LFDNR
+            ORDER BY {order_pos}
         """
         positionen = q(conn, sql_pos_einfach)
 
