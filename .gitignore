@@ -1,0 +1,6 @@
+.env
+*.pyc
+__pycache__/
+eevo_profil.txt
+*.csv
+*.log
