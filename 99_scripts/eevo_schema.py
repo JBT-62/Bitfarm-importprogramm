@@ -213,6 +213,75 @@ KNOWN = {
 }
 
 
+def relations(tabelle: str, richtung: str = "von") -> list[dict]:
+    """
+    Gibt Beziehungen einer Tabelle zurück.
+
+    richtung="von"  → ausgehende FKs (diese Tabelle verweist auf andere)
+    richtung="zu"   → eingehende FKs (andere Tabellen verweisen hierher)
+    richtung="alle" → beides
+
+    Jede Relation ist ein Dict:
+      { von, von_spalte, zu, zu_spalte, quelle }
+    quelle: "db_constraint" | "bekannt" | "muster_lfd_tbl_nr" | ...
+
+    Beispiel:
+        for r in relations("ANGAUFPOS", "von"):
+            print(f"{r['von_spalte']} → {r['zu']}.{r['zu_spalte']}")
+        # LFDANGAUFGUTNR → ANGAUFGUT.LFDNR
+        # LFDARTNR       → ARTIKEL.LFDNR
+    """
+    alle = _laden().get("relations", [])
+    if richtung == "von":
+        return [r for r in alle if r["von"] == tabelle]
+    if richtung == "zu":
+        return [r for r in alle if r["zu"] == tabelle]
+    return [r for r in alle if r["von"] == tabelle or r["zu"] == tabelle]
+
+
+def refs(tabelle: str) -> list[str]:
+    """
+    Gibt alle Tabellen zurück auf die `tabelle` direkt verweist (FK-Ziele).
+
+    Beispiel:
+        refs("ANGAUFPOS")   # → ["ANGAUFGUT", "ARTIKEL"]
+    """
+    return list({r["zu"] for r in relations(tabelle, "von")})
+
+
+def ref_col(von_tabelle: str, zu_tabelle: str) -> str | None:
+    """
+    Gibt die FK-Spalte zurück mit der von_tabelle auf zu_tabelle zeigt.
+
+    Beispiel:
+        ref_col("ANGAUFPOS", "ANGAUFGUT")  # → "LFDANGAUFGUTNR"
+        ref_col("ANGAUFPOS", "ARTIKEL")    # → "LFDARTNR"
+    """
+    for r in relations(von_tabelle, "von"):
+        if r["zu"] == zu_tabelle:
+            return r["von_spalte"]
+    return None
+
+
+def join_sql(von: str, zu: str, von_alias="a", zu_alias="b") -> str | None:
+    """
+    Erzeugt einen JOIN-Ausdruck wenn eine direkte Beziehung existiert.
+
+    Beispiel:
+        join_sql("ANGAUFPOS", "ANGAUFGUT", "p", "h")
+        # → "JOIN ANGAUFGUT h ON h.LFDNR = p.LFDANGAUFGUTNR"
+
+        join_sql("ANGAUFPOS", "ARTIKEL", "p", "ar")
+        # → "LEFT JOIN ARTIKEL ar ON ar.LFDNR = p.LFDARTNR"
+    """
+    for r in relations(von, "von"):
+        if r["zu"] == zu:
+            verif = "JOIN" if r["quelle"] == "db_constraint" else "LEFT JOIN"
+            return (f"{verif} {zu} {zu_alias} "
+                    f"ON {zu_alias}.{r['zu_spalte']} = {von_alias}.{r['von_spalte']}")
+    return None
+
+
 def known(schluessel: str) -> str | None:
     """
     Gibt den bekannten Spaltennamen für einen semantischen Schlüssel zurück.

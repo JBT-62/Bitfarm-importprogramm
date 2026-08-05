@@ -96,19 +96,173 @@ def main():
             "pos":      pos,
         })
 
-    conn.close()
     print(f"    {len(schema)} Tabellen, {sum(len(v) for v in schema.values())} Spalten")
+
+    # ── Echte FK-Constraints (SQL Server sys.*) ───────────────────────────────
+    print("[2] Lese FK-Constraints (sys.foreign_keys) …")
+    fk_echt = []
+    try:
+        cur.execute("""
+            SELECT
+                tp.name  AS von_tabelle,
+                cp.name  AS von_spalte,
+                tr.name  AS zu_tabelle,
+                cr.name  AS zu_spalte,
+                fk.name  AS constraint_name
+            FROM sys.foreign_keys fk
+            JOIN sys.foreign_key_columns fkc
+                ON fkc.constraint_object_id = fk.object_id
+            JOIN sys.tables tp
+                ON tp.object_id = fk.parent_object_id
+            JOIN sys.columns cp
+                ON cp.object_id = fk.parent_object_id
+               AND cp.column_id = fkc.parent_column_id
+            JOIN sys.tables tr
+                ON tr.object_id = fk.referenced_object_id
+            JOIN sys.columns cr
+                ON cr.object_id = fk.referenced_object_id
+               AND cr.column_id = fkc.referenced_column_id
+            ORDER BY tp.name, cp.name
+        """)
+        for row in cur.fetchall():
+            fk_echt.append({
+                "von":        row[0],
+                "von_spalte": row[1],
+                "zu":         row[2],
+                "zu_spalte":  row[3],
+                "constraint": row[4],
+                "quelle":     "db_constraint",
+            })
+        print(f"    {len(fk_echt)} echte FK-Constraints gefunden")
+    except Exception as e:
+        print(f"    FK-Constraints nicht lesbar ({e}) – nur Inferenz")
+
+    conn.close()
+
+    # ── Konventions-basierte Beziehungs-Inferenz ──────────────────────────────
+    print("[3] Inferiere Beziehungen aus Namenskonventionen …")
+
+    alle_tabellen = set(schema.keys())
+
+    def inferiere_beziehungen(schema, alle_tabellen):
+        """
+        eEvolution-Namensmuster:
+          LFDANGAUFGUTNR  → ANGAUFGUT.LFDNR      (LFD + TABELLE + NR)
+          LFDARTNR        → ARTIKEL.LFDNR         (LFD + TABELLE ohne Endung + NR)
+          LFDANFRAGE      → ANFRAGE.LFDANFRAGE    (gleicher Name wie PK)
+          ADRNR           → ADRESS.ADRNR          (bekannte Schlüsselspalte)
+          KNDNR           → ADRESS.ADRNR (Kunden) oder ANGAUFGUT
+          LFD_NR          → PK der eigenen Tabelle
+        """
+        rels = []
+        seen = set()
+
+        # Bekannte direkte Mappings (manuell kuratiert)
+        DIREKT = {
+            "ADRNR":       ("ADRESS", "ADRNR"),
+            "KNDNR":       ("ADRESS", "ADRNR"),
+            "LIEFNR":      ("LIEFERANT", "ADRNR"),
+            "LFDARTNR":    ("ARTIKEL", "LFDNR"),
+            "LFDLIEFNR":   ("LIEFERANT", "ADRNR"),
+        }
+
+        for tbl, cols_list in schema.items():
+            col_namen = [c["col"] for c in cols_list]
+            col_upper = {c.upper() for c in col_namen}
+
+            for col in col_namen:
+                col_u = col.upper()
+                key = (tbl, col)
+                if key in seen:
+                    continue
+
+                # 1. Direkte bekannte Mappings
+                if col_u in DIREKT:
+                    zu_tbl, zu_col = DIREKT[col_u]
+                    if zu_tbl in alle_tabellen:
+                        rels.append({
+                            "von": tbl, "von_spalte": col,
+                            "zu":  zu_tbl, "zu_spalte": zu_col,
+                            "quelle": "bekannt",
+                        })
+                        seen.add(key)
+                        continue
+
+                # 2. Muster: LFD + <TABELLE> + NR  z.B. LFDANGAUFGUTNR → ANGAUFGUT
+                if col_u.startswith("LFD") and col_u.endswith("NR") and col_u != "LFDNR":
+                    mitte = col_u[3:-2]          # z.B. "ANGAUFGUT"
+                    # direkt → ANGAUFGUT
+                    if mitte in alle_tabellen:
+                        zu_tbl = mitte
+                        zu_col = "LFDNR" if "LFDNR" in {c["col"].upper() for c in schema[zu_tbl]} else "LFD_NR"
+                        rels.append({
+                            "von": tbl, "von_spalte": col,
+                            "zu":  zu_tbl, "zu_spalte": zu_col,
+                            "quelle": "muster_lfd_tbl_nr",
+                        })
+                        seen.add(key)
+                        continue
+                    # ohne Endung versuchen: LFDANFRAGE → ANFRAGE (kein NR am Ende)
+                    # (wird über Muster 3 abgedeckt)
+
+                # 3. Muster: LFD + <TABELLE>  (ohne NR) z.B. LFDANFRAGE → ANFRAGE
+                if col_u.startswith("LFD") and col_u != "LFDNR":
+                    kandidat = col_u[3:]          # z.B. "ANFRAGE"
+                    if kandidat in alle_tabellen:
+                        zu_tbl = kandidat
+                        # PK der Zieltabelle ermitteln
+                        zu_pks = [c["col"] for c in schema[zu_tbl]
+                                  if c["col"].upper() in (f"LFD{kandidat}", f"LFD{kandidat}NR",
+                                                          "LFDNR", "LFD_NR")]
+                        zu_col = zu_pks[0] if zu_pks else col   # gleicher Name wie FK
+                        rels.append({
+                            "von": tbl, "von_spalte": col,
+                            "zu":  zu_tbl, "zu_spalte": zu_col,
+                            "quelle": "muster_lfd_tbl",
+                        })
+                        seen.add(key)
+                        continue
+
+                # 4. Muster: <TABELLE>LFDNR  z.B. ANGAUFGUTLFDNR → ANGAUFGUT (umgekehrt)
+                if col_u.endswith("LFDNR"):
+                    kandidat = col_u[:-5]         # z.B. "ANGAUFGUT"
+                    if kandidat in alle_tabellen:
+                        zu_tbl = kandidat
+                        zu_col = "LFDNR" if "LFDNR" in {c["col"].upper() for c in schema[zu_tbl]} else "LFD_NR"
+                        rels.append({
+                            "von": tbl, "von_spalte": col,
+                            "zu":  zu_tbl, "zu_spalte": zu_col,
+                            "quelle": "muster_tbl_lfdnr",
+                        })
+                        seen.add(key)
+
+        return rels
+
+    fk_inferiert = inferiere_beziehungen(schema, alle_tabellen)
+    print(f"    {len(fk_inferiert)} inferierte Beziehungen")
+
+    # Deduplizieren: echte FK-Constraints haben Vorrang
+    echt_keys = {(r["von"], r["von_spalte"]) for r in fk_echt}
+    fk_inferiert_neu = [r for r in fk_inferiert
+                        if (r["von"], r["von_spalte"]) not in echt_keys]
+
+    alle_rels = fk_echt + fk_inferiert_neu
+    print(f"    {len(alle_rels)} Beziehungen gesamt (echt + inferiert)")
 
     # ── JSON speichern ────────────────────────────────────────────────────────
     cache = {
         "_meta": {
-            "server":    server,
-            "database":  database,
-            "generated": datetime.now().isoformat(timespec="seconds"),
-            "tables":    len(schema),
-            "columns":   sum(len(v) for v in schema.values()),
+            "server":          server,
+            "database":        database,
+            "generated":       datetime.now().isoformat(timespec="seconds"),
+            "tables":          len(schema),
+            "columns":         sum(len(v) for v in schema.values()),
+            "relations":       len(alle_rels),
+            "relations_db":    len(fk_echt),
+            "relations_infer": len(fk_inferiert_neu),
         },
-        "tables": schema,
+        "tables":    schema,
+        "relations": alle_rels,
     }
 
     json_pfad = "eevo_schema.json"
@@ -117,7 +271,7 @@ def main():
     print(f"[OK] Gespeichert: {json_pfad}")
 
     # ── Markdown-Referenz ─────────────────────────────────────────────────────
-    print("[2] Erstelle eevo_schema.md …")
+    print("[4] Erstelle eevo_schema.md …")
     md_pfad = "eevo_schema.md"
 
     # Wichtige Tabellen zuerst
@@ -139,14 +293,57 @@ def main():
         f.write("> Automatisch generiert von `build_schema_cache.py`.\n"
                 "> Neu generieren nach Schema-Änderungen in eEvolution.\n\n")
 
+        # Beziehungs-Index (pro Tabelle)
+        rel_von  = {}   # { tbl: [ rel, ... ] }  (ausgehende FKs)
+        rel_zu   = {}   # { tbl: [ rel, ... ] }  (eingehende FKs)
+        for r in alle_rels:
+            rel_von.setdefault(r["von"], []).append(r)
+            rel_zu.setdefault(r["zu"],  []).append(r)
+
         def tabelle_schreiben(name, cols):
             f.write(f"## {name}\n\n")
-            f.write(f"| # | Spalte | Typ | Null? |\n")
-            f.write(f"|---|--------|-----|-------|\n")
+            f.write(f"| # | Spalte | Typ | Null? | Beziehung |\n")
+            f.write(f"|---|--------|-----|-------|----------|\n")
+            # Beziehungen pro Spalte
+            col_rels = {r["von_spalte"].upper(): r for r in rel_von.get(name, [])}
             for c in cols:
-                null = "✓" if c["nullable"] else ""
-                f.write(f"| {c['pos']} | `{c['col']}` | {c['type']} | {null} |\n")
+                null    = "✓" if c["nullable"] else ""
+                rel_txt = ""
+                r = col_rels.get(c["col"].upper())
+                if r:
+                    q = "✓" if r["quelle"] == "db_constraint" else "~"
+                    rel_txt = f"{q} → `{r['zu']}`.`{r['zu_spalte']}`"
+                f.write(f"| {c['pos']} | `{c['col']}` | {c['type']} | {null} | {rel_txt} |\n")
+
+            # Tabellen die auf diese Tabelle verweisen
+            eingehend = rel_zu.get(name, [])
+            if eingehend:
+                f.write(f"\n**Referenziert von:** ")
+                refs = [f"`{r['von']}`.`{r['von_spalte']}`" for r in eingehend[:8]]
+                f.write(", ".join(refs))
+                if len(eingehend) > 8:
+                    f.write(f" … (+{len(eingehend)-8})")
+                f.write("\n")
             f.write("\n")
+
+        # Beziehungs-Übersicht oben
+        f.write("---\n\n## Tabellenbeziehungen\n\n")
+        f.write(f"| Von | Von-Spalte | Zu | Zu-Spalte | Quelle |\n")
+        f.write(f"|-----|-----------|----|-----------|---------|\n")
+        quelle_icon = {
+            "db_constraint":      "✓ DB",
+            "bekannt":            "★ bekannt",
+            "muster_lfd_tbl_nr":  "~ Muster",
+            "muster_lfd_tbl":     "~ Muster",
+            "muster_tbl_lfdnr":   "~ Muster",
+        }
+        for r in sorted(alle_rels, key=lambda x: (x["von"], x["von_spalte"])):
+            icon = quelle_icon.get(r["quelle"], r["quelle"])
+            f.write(f"| `{r['von']}` | `{r['von_spalte']}` | "
+                    f"`{r['zu']}` | `{r['zu_spalte']}` | {icon} |\n")
+        f.write("\n> ✓ DB = echte FK-Constraint  "
+                "★ bekannt = manuell kuratiert  "
+                "~ Muster = aus Namenskonvention inferiert\n\n")
 
         # Wichtige Tabellen zuerst
         f.write("---\n\n## Wichtige Tabellen (Kerntabellen)\n\n")
