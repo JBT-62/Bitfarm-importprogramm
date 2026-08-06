@@ -30,9 +30,10 @@
 > - Historischer OP-Import deaktiviert; echte OP/Eröffnungssalden nur zum Go-live.
 > - Produktfamilien/Präfixe in `02_mappings/product_serial_groups.yaml`.
 > - Artikeltransform ordnet Familien zu; aktive Artikel werden bereits beim SQL-Export gefiltert.
-> - Odoo HTTP, SSH, GitHub und der TCP-Netzweg zum eEvolution-SQL-Server sind erreichbar.
-> - Noch offen: rotierte eEvolution-Read-only-Zugangsdaten als lokale `EV_*`-Variablen
->   bereitstellen, aktiven Export wiederholen sowie CRM-Stufen und weitere Quelldaten laden.
+> - Odoo HTTP, SSH, GitHub und eEvolution SQL sind erreichbar und authentifiziert.
+>   `excel_kuf_readonly` ist nachweislich `db_datareader`, nicht `db_datawriter`/`db_owner`.
+>   Das Kennwort liegt ausschließlich Windows-benutzergebunden verschlüsselt außerhalb von Git.
+> - Noch offen: aktiven eEvolution-Export wiederholen sowie CRM-Stufen und weitere Quelldaten laden.
 > - Arbeitsplätze, Qualitätsprüfpläne, Rollen, DATEV-Testexport und konkrete Carrier-Connectoren
 >   benötigen fachliche Daten/Entscheidungen und Ende-zu-Ende-Abnahme.
 > - Alle früher im Repository abgelegten Klartext-Serverkennwörter wurden entfernt;
