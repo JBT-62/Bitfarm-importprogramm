@@ -93,8 +93,7 @@ def lade_angebot(conn, lfdnr: int) -> dict:
     """Lädt Angebots-Header aus ANGAUFGUT."""
     sql = """
         SELECT ag.LFDNR, ag.KNDNR, ag.ERFASSDATUM,
-               ag.ANGEBOT, ag.AUFTRAG, ag.GUTSCHRIFT,
-               ag.GESAMTPREIS
+               ag.ANGEBOT, ag.AUFTRAG, ag.GUTSCHRIFT
         FROM ANGAUFGUT ag
         WHERE ag.LFDNR = ?
     """
@@ -123,7 +122,7 @@ def _rows_to_dicts(conn, sql, *params):
 def lade_positionen(conn, ang_lfdnr: int) -> list:
     """Lädt alle Positionen eines Angebots aus ANGAUFPOS."""
     sql = """
-        SELECT p.LFDNR, p.LFDANGAUFGUTNR, p.POSNR,
+        SELECT p.LFDANGAUFGUTNR, p.POSNR,
                p.LFDARTNR, p.BESTMENGE, p.PREIS, p.LANGTEXT,
                ar.ARTNR1, ar.ABEZ1, ar.MENGENSCHL
         FROM ANGAUFPOS p
@@ -150,7 +149,7 @@ def lade_artikel(conn, art_lfdnr_list: list) -> dict:
         ) al ON al.LFDARTNR = a.LFDNR
         WHERE a.LFDNR IN ({platzhalter})
     """
-    rows = _rows_to_dicts(conn, sql, art_lfdnr_list)
+    rows = _rows_to_dicts(conn, sql, *art_lfdnr_list)
     return {r["LFDNR"]: r for r in rows}
 
 
@@ -169,7 +168,7 @@ def lade_stuecklisten(conn, art_lfdnr_list: list) -> tuple:
         JOIN ARTIKEL a ON a.LFDNR = p.ART_NR
         WHERE p.ART_NR IN ({platzhalter})
     """
-    boms = _rows_to_dicts(conn, sql_boms, art_lfdnr_list)
+    boms = _rows_to_dicts(conn, sql_boms, *art_lfdnr_list)
     if not boms:
         return [], set()
 
@@ -183,7 +182,7 @@ def lade_stuecklisten(conn, art_lfdnr_list: list) -> tuple:
         WHERE i.LIST_NR IN ({platzhalter2})
         ORDER BY i.LIST_NR, i.LFD_NR
     """
-    lines = _rows_to_dicts(conn, sql_lines, bom_ids)
+    lines = _rows_to_dicts(conn, sql_lines, *bom_ids)
 
     # Stücklisten mit Positionen zusammenführen
     lines_by_bom = defaultdict(list)
@@ -196,23 +195,37 @@ def lade_stuecklisten(conn, art_lfdnr_list: list) -> tuple:
     return boms, komp_ids
 
 
-def lade_lieferanten(conn, adrnr_list: list) -> dict:
-    """Lädt Lieferantenstamm. Gibt dict {adrnr: dict}."""
-    if not adrnr_list:
+def lade_lieferanten(conn, liefnr_list: list) -> dict:
+    """Lädt Lieferantenstamm. Gibt dict {liefnr: dict}."""
+    if not liefnr_list:
         return {}
     # None-Werte filtern
-    adrnr_list = [a for a in adrnr_list if a]
-    if not adrnr_list:
+    liefnr_list = [a for a in liefnr_list if a]
+    if not liefnr_list:
         return {}
-    platzhalter = ",".join("?" * len(adrnr_list))
+    platzhalter = ",".join("?" * len(liefnr_list))
     sql = f"""
-        SELECT l.ADRNR, l.NAME1, l.NAME2, l.STRASSE, l.PLZ, l.ORT,
-               l.EMAIL, l.TEL1, l.LAND
+        SELECT l.LIEFNR, l.ADRNR, l.NAME1, l.NAME2, l.STRASSE, l.PLZ, l.ORT,
+               l.EMAIL, l.TELEFON, l.LAND
         FROM LIEFERANT l
-        WHERE l.ADRNR IN ({platzhalter})
+        WHERE l.LIEFNR IN ({platzhalter})
     """
-    rows = _rows_to_dicts(conn, sql, adrnr_list)
-    return {r["ADRNR"]: r for r in rows}
+    rows = _rows_to_dicts(conn, sql, *liefnr_list)
+    return {r["LIEFNR"]: r for r in rows}
+
+
+def lade_einheiten(conn, codes: set) -> dict:
+    """Löst interne Mengenschlüssel in Kürzel auf: {LFDNR: BEZ}."""
+    codes = {c for c in codes if c is not None}
+    if not codes:
+        return {}
+    platzhalter = ",".join("?" * len(codes))
+    rows = _rows_to_dicts(
+        conn,
+        f"SELECT LFDNR, BEZ, LBEZ FROM MENGENSCHL WHERE LFDNR IN ({platzhalter})",
+        *sorted(codes),
+    )
+    return {r["LFDNR"]: r["BEZ"] for r in rows}
 
 
 def sammle_stammdaten(conn, ang_lfdnr: int) -> dict:
@@ -224,7 +237,7 @@ def sammle_stammdaten(conn, ang_lfdnr: int) -> dict:
 
     angebot = _row_to_dict(conn, """
         SELECT ag.LFDNR, ag.KNDNR, ag.ERFASSDATUM,
-               ag.ANGEBOT, ag.AUFTRAG, ag.GESAMTPREIS
+               ag.ANGEBOT, ag.AUFTRAG
         FROM ANGAUFGUT ag WHERE ag.LFDNR = ?
     """, ang_lfdnr)
 
@@ -233,8 +246,7 @@ def sammle_stammdaten(conn, ang_lfdnr: int) -> dict:
 
     typ = "Angebot" if angebot["ANGEBOT"] else "Auftrag" if angebot["AUFTRAG"] else "Sonstig"
     print(f"    {typ}  Datum={angebot['ERFASSDATUM']}  "
-          f"Kunde-Nr={angebot['KNDNR']}  "
-          f"Gesamt={angebot.get('GESAMTPREIS', '?')} €")
+          f"Kunde-Nr={angebot['KNDNR']}")
 
     # Positionen
     positionen = lade_positionen(conn, ang_lfdnr)
@@ -275,11 +287,13 @@ def sammle_stammdaten(conn, ang_lfdnr: int) -> dict:
     lieferanten = lade_lieferanten(conn, list(lief_ids))
 
     # Mengeneinheiten
-    einheiten = {a["MENGENSCHL"] for a in alle_artikel.values() if a.get("MENGENSCHL")}
+    einheit_codes = {a["MENGENSCHL"] for a in alle_artikel.values()
+                     if a.get("MENGENSCHL") is not None}
     for b in alle_boms:
         for p in b.get("positionen", []):
-            if p.get("MENGENSCHL"):
-                einheiten.add(p["MENGENSCHL"])
+            if p.get("MENGENSCHL") is not None:
+                einheit_codes.add(p["MENGENSCHL"])
+    einheiten = lade_einheiten(conn, einheit_codes)
 
     print(f"\n  Zusammenfassung eEvolution:")
     print(f"    Artikel gesamt:     {len(alle_artikel)}")
@@ -331,7 +345,7 @@ def odoo_find_or_create(model: str, domain: list, vals: dict,
     return new_id
 
 
-def importiere_einheiten(einheiten: set, models, do_import: bool) -> dict:
+def importiere_einheiten(einheiten: dict, models, do_import: bool) -> dict:
     """
     Legt Mengeneinheiten in Odoo an falls nicht vorhanden.
     Gibt dict {kuerzel: odoo_uom_id} zurück.
@@ -344,13 +358,13 @@ def importiere_einheiten(einheiten: set, models, do_import: bool) -> dict:
                         [[["name", "=", "Allgemein"]]])
     kat_id = kat_ids[0] if kat_ids else None
 
-    for bez in sorted(einheiten):
+    for code, bez in sorted(einheiten.items()):
         if not bez:
             continue
         ids = odoo_call(models, "search", "uom.uom",
                         [[["name", "=", bez]]])
         if ids:
-            mapping[bez] = ids[0]
+            mapping[code] = ids[0]
             print(f"    ✓ {bez} (ID {ids[0]})")
         elif do_import:
             vals = {
@@ -360,7 +374,7 @@ def importiere_einheiten(einheiten: set, models, do_import: bool) -> dict:
                 "factor":       1.0,
             }
             new_id = odoo_call(models, "create", "uom.uom", [vals])
-            mapping[bez] = new_id
+            mapping[code] = new_id
             print(f"    + {bez} → angelegt (ID {new_id})")
         else:
             print(f"    ? {bez} → würde angelegt (dry-run)")
@@ -376,17 +390,18 @@ def importiere_lieferanten(lieferanten: dict, models, do_import: bool) -> dict:
     print(f"\n[3] Lieferanten ({len(lieferanten)}) …")
     mapping = {}
 
-    for adrnr, lief in lieferanten.items():
+    for liefnr, lief in lieferanten.items():
         name    = lief.get("NAME1", "") or ""
         name2   = lief.get("NAME2", "") or ""
         vollname = f"{name} {name2}".strip() if name2 else name
-        ext_key  = odoo_ext_id("lief", adrnr)
+        adrnr = lief.get("ADRNR")
+        ext_key = odoo_ext_id("adr", adrnr)
 
         # Suche: zuerst External ID, dann Name
         ids = odoo_call(models, "search", "res.partner",
                         [[["name", "=", vollname], ["supplier_rank", ">", 0]]])
         if ids:
-            mapping[adrnr] = ids[0]
+            mapping[liefnr] = ids[0]
             print(f"    ✓ {vollname[:40]} (ID {ids[0]})")
         elif do_import:
             # Länder-ID
@@ -403,11 +418,11 @@ def importiere_lieferanten(lieferanten: dict, models, do_import: bool) -> dict:
                 "city":          lief.get("ORT") or "",
                 "country_id":    land_id,
                 "email":         lief.get("EMAIL") or "",
-                "phone":         lief.get("TEL1") or "",
-                "comment":       f"Importiert aus eEvolution ADRNR={adrnr}",
+                "phone":         lief.get("TELEFON") or "",
+                "comment":       f"Importiert aus eEvolution ADRNR={adrnr}, LIEFNR={liefnr}",
             }
             new_id = odoo_call(models, "create", "res.partner", [vals])
-            mapping[adrnr] = new_id
+            mapping[liefnr] = new_id
             print(f"    + {vollname[:40]} → angelegt (ID {new_id})")
         else:
             print(f"    ? {vollname[:40]} → würde angelegt (dry-run)")
@@ -579,8 +594,8 @@ def drucke_zusammenfassung(daten: dict):
 
     if daten["lieferanten"]:
         print(f"\n  Lieferanten:")
-        for adrnr, l in daten["lieferanten"].items():
-            print(f"    {adrnr:>6}  {l.get('NAME1', '')[:45]}")
+        for liefnr, l in daten["lieferanten"].items():
+            print(f"    {liefnr:>6}  {l.get('NAME1', '')[:45]}")
 
     print(f"\n  Zum wirklichen Import: --import Flag hinzufügen")
     print("═" * 64)
