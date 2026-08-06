@@ -11,6 +11,7 @@ Ausfuehren:
     python profil_eevolution.py
 """
 
+import os
 import sys
 import json
 from datetime import datetime
@@ -18,8 +19,8 @@ from datetime import datetime
 HOST     = "192.168.120.234"
 PORT     = 1433
 DATABASE = "KuF"
-USER     = "excel_kuf_readonly"
-PASSWORD = "readonly"
+USER     = os.getenv("EV_USER", "")
+PASSWORD = os.getenv("EV_PASSWORD", "")
 
 ZIEL_TABELLEN = [
     "ADRESS", "ADRANSPRECH", "ANSPRECHPARTNEREMAIL",

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="crm_lead_view_form_kf_legacy_dates" model="ir.ui.view">
+        <field name="name">crm.lead.form.kf.legacy.dates</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group string="eEvolution-Historie" groups="base.group_system">
+                    <field name="kf_legacy_created_at"/>
+                    <field name="kf_legacy_updated_at"/>
+                    <field name="kf_legacy_closed_at"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

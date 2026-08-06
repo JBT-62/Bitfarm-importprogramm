@@ -9,6 +9,35 @@
 
 ## 0. AKTUELLE AUFGABE FÜR CODEX (Stand 2026-08-06)
 
+> **Aktualisierung 06.08.2026:** Maßgebliche Arbeitskopie ist ausschließlich
+> `V:\Claude-Projekte\odoo_projekt`. Die nachstehenden Hinweise zu
+> `C:\temp\bitfarm-repo`, Kopierarbeiten und einem Einzelangebot sind überholt.
+>
+> Aktueller Stand:
+> - Original-Pflichtenheft vollständig geprüft.
+> - Read-only-Soll-Ist-Prüfung der Testdatenbank `erp-test-1` dokumentiert in
+>   `05_doku/ODOO_PFLICHTENHEFT_SOLL_IST_20260806.md`.
+> - Verifizierte Vollsicherung von `erp-test-1` vor Änderungen liegt auf dem Odoo-Server
+>   unter `/var/backups/odoo/erp-test-1_20260806_114539`.
+> - Pflichtmodule für Qualität, Fertigungs-QS, Shop-Floor-QS, Fremdfertigung,
+>   Einkaufsvereinbarungen und Versandmethoden sind auf `erp-test-1` installiert.
+> - Lager `K&F Hannover` ist auf 3-stufigen Ein-/Ausgang und Vor-/Nachproduktion gestellt.
+> - `kf_serial_category` und `kf_legacy_migration` sind installiert; 16 Seriennummerngruppen
+>   sind eingerichtet.
+> - Neue Seriennummern verwenden `GGWWYYNNNNN` mit echter ISO-Kalenderwoche und dauerhaftem
+>   fünfstelligem Gruppenzähler. Aktuelles Datum und ISO-Jahresgrenze wurden transaktional
+>   getestet; alle Testdaten und Zählerbewegungen wurden zurückgerollt.
+> - Historischer OP-Import deaktiviert; echte OP/Eröffnungssalden nur zum Go-live.
+> - Produktfamilien/Präfixe in `02_mappings/product_serial_groups.yaml`.
+> - Artikeltransform ordnet Familien zu; aktive Artikel werden bereits beim SQL-Export gefiltert.
+> - Odoo HTTP, SSH, GitHub und der TCP-Netzweg zum eEvolution-SQL-Server sind erreichbar.
+> - Noch offen: rotierte eEvolution-Read-only-Zugangsdaten als lokale `EV_*`-Variablen
+>   bereitstellen, aktiven Export wiederholen sowie CRM-Stufen und weitere Quelldaten laden.
+> - Arbeitsplätze, Qualitätsprüfpläne, Rollen, DATEV-Testexport und konkrete Carrier-Connectoren
+>   benötigen fachliche Daten/Entscheidungen und Ende-zu-Ende-Abnahme.
+> - Alle früher im Repository abgelegten Klartext-Serverkennwörter wurden entfernt;
+>   das betroffene Kennwort muss rotiert werden.
+
 **Ziel:** Stammdaten für Angebot 39575 aus eEvolution nach Odoo 19 importieren,
 damit die Mitarbeiter den Vorgang dort manuell durchführen können (kein automatischer Prozess).
 
@@ -16,7 +45,7 @@ damit die Mitarbeiter den Vorgang dort manuell durchführen können (kein automa
 ```
 Projektordner:  Z:\Claude-Projekte\odoo_projekt\
 Git-Repo:       C:\temp\bitfarm-repo\  (Branch: claude/eevolution-mapping-validation-iemk0y)
-eEvolution:     192.168.120.234 / KuF  (read-only: excel_kuf_readonly / readonly)
+eEvolution:     192.168.120.234 / KuF  (Read-only-Zugang ausschließlich lokal)
 Odoo Test:      192.168.120.225:8069   (DB: erp-test-1, admin + API-Key aus .env)
 ```
 
@@ -86,7 +115,7 @@ Testmigration auf `erp-test-1` läuft. Produktiv-Cutover Q3/Q4 2026.
 | System | Details |
 |---|---|
 | Quelle | eEvolution, MS SQL 192.168.120.234, DB: `KuF` |
-| Quelle User | `excel_kuf_readonly` / `readonly` – **niemals** in Code eintragen |
+| Quelle User | Read-only-SQL-Benutzer ausschließlich lokal in `EV_USER` hinterlegen |
 | Ziel Test | Odoo 19 Enterprise 192.168.120.225:8069, DB: `erp-test-1` |
 | Ziel Prod | erp-intern.kling-freitag.de (nginx + Let's Encrypt) |
 | Authentifizierung | XML-RPC mit API-Key (`ODOO_API_KEY` aus `.env`) |

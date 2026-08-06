@@ -1,0 +1,21 @@
+# K&F-Systems: ein Präfix je Produktfamilie.
+# Format: GG + ISO-Fertigungswoche (WW) + Jahr zweistellig (YY) + 5-stellige Folge.
+# Die Folge wird nicht wöchentlich oder jährlich zurückgesetzt.
+root_category: K&F-Systems
+groups:
+  - {name: SONA, prefix: "11", patterns: ["SONA"]}
+  - {name: CA, prefix: "12", patterns: ["CA ", "CA1", "CA2"]}
+  - {name: Passio, prefix: "15", patterns: ["PASSIO"]}
+  - {name: VIDA, prefix: "30", patterns: ["VIDA"]}
+  - {name: Gravis, prefix: "36", patterns: ["GRAVIS"]}
+  - {name: Sequenza, prefix: "51", patterns: ["SEQUENZA"]}
+  - {name: Spectra, prefix: "54", patterns: ["SPECTRA"]}
+  - {name: Line, prefix: "56", patterns: ["LINE 212"]}
+  - {name: SW, prefix: "60", patterns: ["SW 112", "SW 115", "SW 118", "SW 215"]}
+  - {name: ACCESS, prefix: "65", patterns: ["ACCESS"]}
+  - {name: Nomos, prefix: "68", patterns: ["NOMOS"]}
+  - {name: PIA, prefix: "85", patterns: ["PIA"]}
+  - {name: Controller, prefix: "90", patterns: ["CONTROLLER"]}
+  - {name: CP, prefix: "91", patterns: ["CP 4", "CP+"]}
+  - {name: BoB, prefix: "92", patterns: ["BOB"]}
+  - {name: System Amp Rack, prefix: "96", patterns: ["SYSTEM AMP RACK"]}

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_category_form_kf_serial" model="ir.ui.view">
+        <field name="name">product.category.form.kf.serial</field>
+        <field name="model">product.category</field>
+        <field name="inherit_id" ref="product.product_category_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/group" position="inside">
+                <group string="K&amp;F Seriennummern">
+                    <field name="kf_serial_required"/>
+                    <field name="kf_serial_prefix" invisible="not kf_serial_required" required="kf_serial_required"/>
+                    <field name="kf_serial_sequence_id" invisible="not kf_serial_required"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

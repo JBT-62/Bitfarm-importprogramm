@@ -38,7 +38,7 @@ except ImportError:
 EEVO_SERVER  = os.getenv("EEVO_SERVER",  "192.168.120.234")
 EEVO_DB      = os.getenv("EEVO_DB",      "KuF")
 EEVO_USER    = os.getenv("EEVO_USER",    "excel_kuf_readonly")
-EEVO_PWD     = os.getenv("EEVO_PWD",     "readonly")
+EEVO_PWD     = os.getenv("EEVO_PWD",     "")
 
 ODOO_URL     = os.getenv("ODOO_URL",     "http://192.168.120.225:8069")
 ODOO_DB      = os.getenv("ODOO_DB",      "erp-test-1")
@@ -141,6 +141,7 @@ def lade_artikel(conn, art_lfdnr_list: list) -> dict:
     sql = f"""
         SELECT a.LFDNR, a.ARTNR1, a.ABEZ1, a.ABEZ2,
                a.MENGENSCHL, a.VKPR1, a.EKPR, a.LFDLIEFNR,
+               a.LAGERFUEHRUNG, a.SERIENNR, a.CHARGENFAEHIG,
                al.CONTENT AS LANGTEXT
         FROM ARTIKEL a
         LEFT JOIN (
@@ -353,31 +354,23 @@ def importiere_einheiten(einheiten: dict, models, do_import: bool) -> dict:
     print(f"\n[2] Mengeneinheiten ({len(einheiten)}) …")
     mapping = {}
 
-    # Standard-Kategorie holen oder anlegen
-    kat_ids = odoo_call(models, "search", "uom.category",
-                        [[["name", "=", "Allgemein"]]])
-    kat_id = kat_ids[0] if kat_ids else None
+    # eEvolution-Kürzel auf vorhandene Odoo-19-Standardeinheiten abbilden.
+    # Odoo 19 verwendet kein uom.category/uom_type mehr.
+    aliases = {"STK": "Units", "Stk": "Units", "l": "L"}
 
     for code, bez in sorted(einheiten.items()):
         if not bez:
             continue
+        odoo_name = aliases.get(bez, bez)
         ids = odoo_call(models, "search", "uom.uom",
-                        [[["name", "=", bez]]])
+                        [[["name", "=", odoo_name]]])
         if ids:
             mapping[code] = ids[0]
-            print(f"    ✓ {bez} (ID {ids[0]})")
-        elif do_import:
-            vals = {
-                "name":         bez,
-                "category_id":  kat_id,
-                "uom_type":     "reference",
-                "factor":       1.0,
-            }
-            new_id = odoo_call(models, "create", "uom.uom", [vals])
-            mapping[code] = new_id
-            print(f"    + {bez} → angelegt (ID {new_id})")
+            print(f"    ✓ {bez} → {odoo_name} (ID {ids[0]})")
         else:
-            print(f"    ? {bez} → würde angelegt (dry-run)")
+            raise RuntimeError(
+                f"Keine freigegebene Odoo-Einheit für eEvolution-Code {code} ({bez})"
+            )
 
     return mapping
 
@@ -469,9 +462,11 @@ def importiere_artikel(artikel: dict, uom_map: dict, lief_map: dict,
             vals = {
                 "name":          name_voll,
                 "default_code":  artnr,
-                "type":          "consu",  # oder 'product' für Lagerführung
+                "type":          "consu",
+                "is_storable":   bool(art.get("LAGERFUEHRUNG")),
+                "tracking":      ("serial" if art.get("SERIENNR") else
+                                  "lot" if art.get("CHARGENFAEHIG") else "none"),
                 "uom_id":        uom_id,
-                "uom_po_id":     uom_id,
                 "standard_price": float(art.get("EKPR") or 0),
                 "list_price":    float(art.get("VKPR1") or 0),
                 "description":   art.get("LANGTEXT") or "",
