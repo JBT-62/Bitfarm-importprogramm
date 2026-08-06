@@ -7,6 +7,77 @@
 
 ---
 
+## 0. AKTUELLE AUFGABE FÜR CODEX (Stand 2026-08-06)
+
+**Ziel:** Stammdaten für Angebot 39575 aus eEvolution nach Odoo 19 importieren,
+damit die Mitarbeiter den Vorgang dort manuell durchführen können (kein automatischer Prozess).
+
+### Lokale Umgebung (Windows)
+```
+Projektordner:  Z:\Claude-Projekte\odoo_projekt\
+Git-Repo:       C:\temp\bitfarm-repo\  (Branch: claude/eevolution-mapping-validation-iemk0y)
+eEvolution:     192.168.120.234 / KuF  (read-only: excel_kuf_readonly / readonly)
+Odoo Test:      192.168.120.225:8069   (DB: erp-test-1, admin + API-Key aus .env)
+```
+
+### Schritte die Codex ausführen soll
+
+**1. Git-Repo aktualisieren:**
+```cmd
+cd C:\temp\bitfarm-repo
+git commit --no-edit          # hängenden Merge abschließen (falls MERGE_HEAD existiert)
+git pull
+```
+
+**2. Skript ins Projektverzeichnis kopieren:**
+```cmd
+copy 99_scripts\pilot_import_angebot.py Z:\Claude-Projekte\odoo_projekt\99_scripts\pilot_import_angebot.py
+```
+
+**3. .env prüfen / anlegen** (falls nicht vorhanden):
+```cmd
+cd /d Z:\Claude-Projekte\odoo_projekt
+setup_env.cmd
+```
+Inhalt `.env`:
+```
+ODOO_URL=http://192.168.120.225:8069
+ODOO_DB=erp-test-1
+ODOO_USER=admin
+ODOO_API_KEY=<api-key>
+```
+
+**4. Dry-Run – zeigt was importiert werden würde:**
+```cmd
+cd /d Z:\Claude-Projekte\odoo_projekt
+python 99_scripts\pilot_import_angebot.py
+```
+
+**5. Import ausführen** (nach Prüfung des Dry-Run):
+```cmd
+python 99_scripts\pilot_import_angebot.py --import
+```
+
+### Was das Skript importiert
+- Mengeneinheiten (uom.uom)
+- Lieferanten/Lohnfertiger (res.partner, supplier_rank=1)
+- Artikel + Beschreibungen (product.template)
+- Stücklisten rekursiv über alle Ebenen (mrp.bom + mrp.bom.line)
+
+### Was das Skript NICHT macht (händisch durch Mitarbeiter)
+- Keinen Kunden anlegen
+- Kein Angebot / Auftrag erstellen
+- Keine Buchungen / Rechnungen
+
+### Fehlerquellen die auftreten können
+- `MERGE_HEAD exists` → `git commit --no-edit` ausführen
+- `.env` fehlt → `setup_env.cmd` ausführen
+- `ODOO_DB` falsch → muss `erp-test-1` sein (nicht `kuf-erp-test`)
+- Spaltenname falsch → Spaltenliste in Abschnitt 5.2 prüfen
+- BOM-Typ `subcontract` für Lohnfertigung (Cobertec) ggf. manuell anpassen
+
+---
+
 ## 1. Projektkontext
 
 K&F migriert ihr ERP von eEvolution (MS SQL Server, Eigenentwicklung Bitfarm AG) auf Odoo 19 Enterprise.
