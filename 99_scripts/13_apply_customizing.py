@@ -31,6 +31,7 @@ USER, KEY = os.getenv("ODOO_USER"), os.getenv("ODOO_API_KEY")
 
 SETTINGS_TO_ENABLE = {
     "group_stock_multi_locations": "Mehrere Lagerorte",
+    "group_stock_adv_location":    "Mehrstufige Routen je Produkt",
     "group_stock_production_lot":  "Seriennummern und Chargen",
     "group_stock_tracking_lot":    "Pakete (Packages)",
     "group_product_pricelist":     "Verkaufspreislisten",

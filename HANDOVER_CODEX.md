@@ -14,6 +14,20 @@
 > `C:\temp\bitfarm-repo`, Kopierarbeiten und einem Einzelangebot sind überholt.
 >
 > Aktueller Stand:
+> - Pilotangebot eEvolution 39575 wurde idempotent nach `erp-test-1` importiert:
+>   CRM-Chance, Kunde, 5 Ansprechpartner, 51 Lieferanten, 152 Artikel,
+>   34 Stücklisten mit 186 Positionen und Odoo-Angebot `S00001` mit 5 Positionen.
+> - Abschlussprüfung erfolgreich: netto 27.517,11 EUR, Steuer 5.228,25 EUR,
+>   brutto 32.745,36 EUR. Angebot bleibt im Entwurf; keine Lieferungen,
+>   Fertigungsaufträge oder Bestellungen wurden erzeugt.
+> - Der Wiederholungslauf erzeugt keine Dubletten (`create=0`); alle Datensätze
+>   besitzen stabile externe IDs im Namensraum `__import__`.
+> - Verifizierte Sicherung unmittelbar vor dem Pilotimport:
+>   `/var/backups/odoo/erp-test-1_20260806_125146_pre_pilot39575`.
+> - Verbindliche Artikelregel: `ARTIKEL.INAKTIV` ist bei K&F kein Löschkriterium
+>   und wird importiert. Ausschließlich gesetztes `ARTIKEL.LOESCHKNZ` schließt
+>   einen Artikel aus. Benötigt eine ausgewählte Stückliste einen gelöschten
+>   Artikel, bricht der Pilotimport kontrolliert ab.
 > - Original-Pflichtenheft vollständig geprüft.
 > - Read-only-Soll-Ist-Prüfung der Testdatenbank `erp-test-1` dokumentiert in
 >   `05_doku/ODOO_PFLICHTENHEFT_SOLL_IST_20260806.md`.
@@ -29,18 +43,21 @@
 >   getestet; alle Testdaten und Zählerbewegungen wurden zurückgerollt.
 > - Historischer OP-Import deaktiviert; echte OP/Eröffnungssalden nur zum Go-live.
 > - Produktfamilien/Präfixe in `02_mappings/product_serial_groups.yaml`.
-> - Artikeltransform ordnet Familien zu; aktive Artikel werden bereits beim SQL-Export gefiltert.
+> - Artikeltransform ordnet Familien zu. Inaktive eEvolution-Artikel werden
+>   ausdrücklich mit übernommen; nur Artikel mit Löschkennzeichnung entfallen.
 > - Odoo HTTP, SSH, GitHub und eEvolution SQL sind erreichbar und authentifiziert.
 >   `excel_kuf_readonly` ist nachweislich `db_datareader`, nicht `db_datawriter`/`db_owner`.
 >   Das Kennwort liegt ausschließlich Windows-benutzergebunden verschlüsselt außerhalb von Git.
-> - Noch offen: aktiven eEvolution-Export wiederholen sowie CRM-Stufen und weitere Quelldaten laden.
+> - Noch offen: vollständigen eEvolution-Export mit der korrigierten Löschregel
+>   wiederholen sowie CRM-Stufen und weitere Quelldaten laden.
 > - Arbeitsplätze, Qualitätsprüfpläne, Rollen, DATEV-Testexport und konkrete Carrier-Connectoren
 >   benötigen fachliche Daten/Entscheidungen und Ende-zu-Ende-Abnahme.
 > - Alle früher im Repository abgelegten Klartext-Serverkennwörter wurden entfernt;
 >   das betroffene Kennwort muss rotiert werden.
 
-**Ziel:** Stammdaten für Angebot 39575 aus eEvolution nach Odoo 19 importieren,
-damit die Mitarbeiter den Vorgang dort manuell durchführen können (kein automatischer Prozess).
+**Ziel erreicht:** Stammdaten, CRM-Chance und Angebot 39575 wurden nach Odoo 19
+importiert. Die Mitarbeiter beginnen den manuellen Prozess beim Entwurfsangebot
+`S00001`. Siehe `05_doku/PILOTTEST_ANGEBOT_39575.md`.
 
 ### Lokale Umgebung (Windows)
 ```
@@ -95,9 +112,9 @@ python 99_scripts\pilot_import_angebot.py --import
 - Stücklisten rekursiv über alle Ebenen (mrp.bom + mrp.bom.line)
 
 ### Was das Skript NICHT macht (händisch durch Mitarbeiter)
-- Keinen Kunden anlegen
-- Kein Angebot / Auftrag erstellen
-- Keine Buchungen / Rechnungen
+- Angebot nicht bestätigen
+- Keine Lieferungen, Fertigungsaufträge oder Bestellungen auslösen
+- Keine Buchungen oder Rechnungen erzeugen
 
 ### Fehlerquellen die auftreten können
 - `MERGE_HEAD exists` → `git commit --no-edit` ausführen
