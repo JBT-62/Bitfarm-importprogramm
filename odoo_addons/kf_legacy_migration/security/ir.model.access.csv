@@ -1,0 +1,27 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_kf_legacy_trace_user,kf.legacy.trace user,model_kf_legacy_trace,base.group_user,1,0,0,0
+access_kf_legacy_trace_event_user,kf.legacy.trace.event user,model_kf_legacy_trace_event,base.group_user,1,0,0,0
+access_kf_legacy_trace_system,kf.legacy.trace system,model_kf_legacy_trace,base.group_system,1,1,1,1
+access_kf_legacy_trace_event_system,kf.legacy.trace.event system,model_kf_legacy_trace_event,base.group_system,1,1,1,1
+access_kf_legacy_production_user,kf.legacy.production user,model_kf_legacy_production,base.group_user,1,0,0,0
+access_kf_legacy_production_component_user,kf.legacy.production.component user,model_kf_legacy_production_component,base.group_user,1,0,0,0
+access_kf_legacy_production_output_user,kf.legacy.production.output user,model_kf_legacy_production_output,base.group_user,1,0,0,0
+access_kf_legacy_production_system,kf.legacy.production system,model_kf_legacy_production,base.group_system,1,1,1,1
+access_kf_legacy_production_component_system,kf.legacy.production.component system,model_kf_legacy_production_component,base.group_system,1,1,1,1
+access_kf_legacy_production_output_system,kf.legacy.production.output system,model_kf_legacy_production_output,base.group_system,1,1,1,1
+access_kf_legacy_trace_usage_user,kf.legacy.trace.usage user,model_kf_legacy_trace_usage,base.group_user,1,0,0,0
+access_kf_legacy_trace_usage_system,kf.legacy.trace.usage system,model_kf_legacy_trace_usage,base.group_system,1,1,1,1
+access_kf_legacy_trace_delivery_user,kf.legacy.trace.delivery user,model_kf_legacy_trace_delivery,base.group_user,1,0,0,0
+access_kf_legacy_trace_delivery_system,kf.legacy.trace.delivery system,model_kf_legacy_trace_delivery,base.group_system,1,1,1,1
+access_kf_legacy_sales_document_user,kf.legacy.sales.document user,model_kf_legacy_sales_document,base.group_user,1,0,0,0
+access_kf_legacy_sales_document_line_user,kf.legacy.sales.document.line user,model_kf_legacy_sales_document_line,base.group_user,1,0,0,0
+access_kf_legacy_sales_document_system,kf.legacy.sales.document system,model_kf_legacy_sales_document,base.group_system,1,1,1,1
+access_kf_legacy_sales_document_line_system,kf.legacy.sales.document.line system,model_kf_legacy_sales_document_line,base.group_system,1,1,1,1
+access_kf_legacy_purchase_document_user,kf.legacy.purchase.document user,model_kf_legacy_purchase_document,base.group_user,1,0,0,0
+access_kf_legacy_purchase_document_line_user,kf.legacy.purchase.document.line user,model_kf_legacy_purchase_document_line,base.group_user,1,0,0,0
+access_kf_legacy_purchase_document_system,kf.legacy.purchase.document system,model_kf_legacy_purchase_document,base.group_system,1,1,1,1
+access_kf_legacy_purchase_document_line_system,kf.legacy.purchase.document.line system,model_kf_legacy_purchase_document_line,base.group_system,1,1,1,1
+access_kf_legacy_business_document_user,kf.legacy.business.document user,model_kf_legacy_business_document,base.group_user,1,0,0,0
+access_kf_legacy_business_document_line_user,kf.legacy.business.document.line user,model_kf_legacy_business_document_line,base.group_user,1,0,0,0
+access_kf_legacy_business_document_system,kf.legacy.business.document system,model_kf_legacy_business_document,base.group_system,1,1,1,1
+access_kf_legacy_business_document_line_system,kf.legacy.business.document.line system,model_kf_legacy_business_document_line,base.group_system,1,1,1,1

@@ -1,0 +1,15 @@
+// The width limit lives on Odoo's generated sheet background, not on <sheet>.
+.o_form_view .o_form_sheet_bg:has(> .o_form_sheet.kf_legacy_full_width_sheet) {
+    max-width: none !important;
+}
+
+// Use an absolute, same-origin font URL as a defensive fallback for stale
+// relative asset URLs after a backend bundle update.
+@font-face {
+    font-family: "odoo_ui_icons";
+    src: url("/web/static/lib/odoo_ui_icons/fonts/odoo_ui_icons.woff2") format("woff2"),
+         url("/web/static/lib/odoo_ui_icons/fonts/odoo_ui_icons.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+    font-display: block;
+}

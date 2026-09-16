@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_kf_legacy_trace_list" model="ir.ui.view">
+        <field name="name">kf.legacy.trace.list</field>
+        <field name="model">kf.legacy.trace</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0" decoration-warning="quality_status == 'review'">
+                <field name="name"/>
+                <field name="article_number" optional="show"/>
+                <field name="product_id"/>
+                <field name="pia_scope_role" optional="show"/>
+                <field name="first_event_date_display" optional="show"/>
+                <field name="last_event_date_display" optional="show"/>
+                <field name="event_count" optional="show"/>
+                <field name="quality_status"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_kf_legacy_trace_form" model="ir.ui.view">
+        <field name="name">kf.legacy.trace.form</field>
+        <field name="model">kf.legacy.trace</field>
+        <field name="arch" type="xml">
+            <form create="0" edit="0" delete="0" class="kf_legacy_full_width_form">
+                <sheet class="kf_legacy_full_width_sheet">
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="trace_type"/>
+                            <field name="product_id"/>
+                            <field name="eevo_product_key"/>
+                            <field name="article_number"/>
+                            <field name="article_name"/>
+                        </group>
+                        <group>
+                            <field name="pia_scope_role"/>
+                            <field name="first_event_date_display"/>
+                            <field name="last_event_date_display"/>
+                            <field name="event_count"/>
+                            <field name="quality_status"/>
+                            <field name="original_partner_id"/>
+                            <field name="original_order_number"/>
+                            <field name="original_delivery_number"/>
+                            <field name="original_delivery_date"/>
+                            <field name="usage_count"/>
+                            <field name="direct_delivery_count"/>
+                            <field name="impacted_customer_count"/>
+                            <field name="source_system"/>
+                        </group>
+                    </group>
+                    <group invisible="quality_status != 'review'">
+                        <field name="quality_note"/>
+                    </group>
+                    <notebook>
+                        <page string="Historische Ereignisse">
+                            <field name="event_ids" readonly="1">
+                                <list create="0" edit="0" delete="0">
+                                    <field name="event_date_display"/>
+                                    <field name="event_type_name"/>
+                                    <field name="production_id" optional="show"/>
+                                    <field name="document_number"/>
+                                    <field name="reference_number"/>
+                                    <field name="reference_position"/>
+                                    <field name="partner_id"/>
+                                    <field name="quantity" optional="show"/>
+                                    <field name="description" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Erzeugte Endserien/-chargen" invisible="usage_count == 0">
+                            <field name="usage_ids" readonly="1">
+                                <list create="0" edit="0" delete="0"
+                                      decoration-success="allocation_basis == 'booking_batch'"
+                                      decoration-warning="allocation_basis == 'production_order'">
+                                    <field name="production_id"/>
+                                    <field name="consumption_date"/>
+                                    <field name="output_storage_date"/>
+                                    <field name="output_type"/>
+                                    <field name="output_number"/>
+                                    <field name="output_trace_id" optional="show"/>
+                                    <field name="customer_id"/>
+                                    <field name="customer_order_number" optional="show"/>
+                                    <field name="customer_delivery_number"/>
+                                    <field name="customer_delivery_date_display" optional="show"/>
+                                    <field name="allocation_basis"/>
+                                    <field name="allocation_note" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Direkte Lieferungen" invisible="direct_delivery_count == 0">
+                            <field name="delivery_ids" readonly="1">
+                                <list create="0" edit="0" delete="0">
+                                    <field name="delivery_date_display"/>
+                                    <field name="delivery_number"/>
+                                    <field name="order_key"/>
+                                    <field name="order_number" optional="hide"/>
+                                    <field name="partner_id"/>
+                                    <field name="quantity" sum="Summe"/>
+                                    <field name="classification" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_kf_legacy_trace_search" model="ir.ui.view">
+        <field name="name">kf.legacy.trace.search</field>
+        <field name="model">kf.legacy.trace</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="article_number"/>
+                <field name="product_id"/>
+                <field name="original_partner_id"/>
+                <field name="original_order_number"/>
+                <field name="original_delivery_number"/>
+                <filter name="serial" string="Seriennummern" domain="[('trace_type','=','serial')]"/>
+                <filter name="lot" string="Chargen" domain="[('trace_type','=','lot')]"/>
+                <filter name="review" string="Prüfung erforderlich" domain="[('quality_status','=','review')]"/>
+                <separator/>
+                <filter name="group_product" string="Gruppieren nach Artikel" context="{'group_by':'product_id'}"/>
+                <filter name="group_type" string="Gruppieren nach Typ" context="{'group_by':'trace_type'}"/>
+                <filter name="group_quality" string="Gruppieren nach Datenqualität" context="{'group_by':'quality_status'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_kf_legacy_trace" model="ir.actions.act_window">
+        <field name="name">eEvolution Serien- und Chargenhistorie</field>
+        <field name="res_model">kf.legacy.trace</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+    </record>
+
+    <record id="action_kf_legacy_serial_trace" model="ir.actions.act_window">
+        <field name="name">Seriennummern – eEvolution-Historie</field>
+        <field name="res_model">kf.legacy.trace</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('trace_type','=','serial')]</field>
+        <field name="context">{'default_trace_type': 'serial'}</field>
+    </record>
+
+    <record id="action_kf_legacy_lot_trace" model="ir.actions.act_window">
+        <field name="name">Chargennummern – eEvolution-Historie</field>
+        <field name="res_model">kf.legacy.trace</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('trace_type','=','lot')]</field>
+        <field name="context">{'default_trace_type': 'lot'}</field>
+    </record>
+
+    <record id="action_kf_odoo_serial_trace" model="ir.actions.act_window">
+        <field name="name">Seriennummern – Odoo aktuell</field>
+        <field name="res_model">stock.lot</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('product_id.tracking','=','serial')]</field>
+        <field name="context">{}</field>
+    </record>
+
+    <record id="action_kf_odoo_lot_trace" model="ir.actions.act_window">
+        <field name="name">Chargennummern – Odoo aktuell</field>
+        <field name="res_model">stock.lot</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('product_id.tracking','=','lot')]</field>
+        <field name="context">{}</field>
+    </record>
+
+    <record id="view_kf_legacy_production_list" model="ir.ui.view">
+        <field name="name">kf.legacy.production.list</field>
+        <field name="model">kf.legacy.production</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0">
+                <field name="name"/>
+                <field name="article_number"/>
+                <field name="article_name"/>
+                <field name="product_id" optional="show"/>
+                <field name="quantity_ordered"/>
+                <field name="quantity_produced"/>
+                <field name="end_date_display"/>
+                <field name="component_posting_count"/>
+                <field name="traced_component_posting_count"/>
+                <field name="output_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_kf_legacy_production_form" model="ir.ui.view">
+        <field name="name">kf.legacy.production.form</field>
+        <field name="model">kf.legacy.production</field>
+        <field name="arch" type="xml">
+            <form create="0" edit="0" delete="0" class="kf_legacy_full_width_form">
+                <sheet class="kf_legacy_full_width_sheet">
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="product_id"/>
+                            <field name="eevo_product_key"/>
+                            <field name="article_number"/>
+                            <field name="article_name"/>
+                            <field name="bom_reference"/>
+                        </group>
+                        <group>
+                            <field name="status_code"/>
+                            <field name="order_type"/>
+                            <field name="quantity_ordered"/>
+                            <field name="quantity_produced"/>
+                            <field name="quantity_scrapped"/>
+                            <field name="planned_date_display"/>
+                            <field name="production_date_display"/>
+                            <field name="end_date_display"/>
+                            <field name="output_count"/>
+                            <field name="locked"/>
+                            <field name="source_system"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="allocation_note" nolabel="1"/>
+                    </group>
+                    <notebook>
+                        <page string="Tatsächlich gebuchte Komponenten">
+                            <field name="component_ids" readonly="1">
+                                <list create="0" edit="0" delete="0" decoration-danger="is_cancelled">
+                                    <field name="booking_date_display"/>
+                                    <field name="article_number"/>
+                                    <field name="article_name"/>
+                                    <field name="product_id" optional="show"/>
+                                    <field name="quantity" sum="Summe"/>
+                                    <field name="serial_number" optional="show"/>
+                                    <field name="lot_number" optional="show"/>
+                                    <field name="document_number" optional="hide"/>
+                                    <field name="is_cancelled" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Produzierte Seriennummern / Chargen">
+                            <field name="output_ids" readonly="1">
+                                <list create="0" edit="0" delete="0">
+                                    <field name="storage_date_display"/>
+                                    <field name="output_type"/>
+                                    <field name="number"/>
+                                    <field name="quantity"/>
+                                    <field name="trace_id" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_kf_legacy_production_search" model="ir.ui.view">
+        <field name="name">kf.legacy.production.search</field>
+        <field name="model">kf.legacy.production</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="article_number"/>
+                <field name="article_name"/>
+                <field name="product_id"/>
+                <field name="output_ids" string="Serien-/Chargennummer"/>
+                <filter name="group_product" string="Gruppieren nach Artikel" context="{'group_by':'product_id'}"/>
+                <filter name="group_end_date" string="Gruppieren nach Abschlussmonat" context="{'group_by':'end_date:month'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_kf_legacy_production" model="ir.actions.act_window">
+        <field name="name">eEvolution Produktionsaufträge</field>
+        <field name="res_model">kf.legacy.production</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+    </record>
+
+    <menuitem id="menu_kf_legacy_trace_root" name="Rückverfolgung" sequence="90" groups="base.group_user"/>
+    <record id="menu_kf_legacy_trace" model="ir.ui.menu">
+        <field name="name">Seriennummern</field>
+        <field name="parent_id" ref="menu_kf_legacy_trace_root"/>
+        <field name="action" eval="False"/>
+        <field name="sequence">10</field>
+        <field name="group_ids" eval="[(6, 0, [ref('base.group_user')])]"/>
+    </record>
+    <menuitem id="menu_kf_legacy_serial_history" name="eEvolution-Historie"
+              parent="menu_kf_legacy_trace" action="action_kf_legacy_serial_trace"
+              sequence="10" groups="base.group_user"/>
+    <menuitem id="menu_kf_odoo_serial_current" name="Odoo aktuell"
+              parent="menu_kf_legacy_trace" action="action_kf_odoo_serial_trace"
+              sequence="20" groups="stock.group_stock_user"/>
+    <menuitem id="menu_kf_trace_lots" name="Chargennummern" parent="menu_kf_legacy_trace_root"
+              sequence="20" groups="base.group_user"/>
+    <menuitem id="menu_kf_legacy_lot_history" name="eEvolution-Historie"
+              parent="menu_kf_trace_lots" action="action_kf_legacy_lot_trace"
+              sequence="10" groups="base.group_user"/>
+    <menuitem id="menu_kf_odoo_lot_current" name="Odoo aktuell"
+              parent="menu_kf_trace_lots" action="action_kf_odoo_lot_trace"
+              sequence="20" groups="stock.group_stock_user"/>
+    <menuitem id="menu_kf_legacy_production" name="Produktionsaufträge (Historie)"
+              parent="menu_kf_legacy_trace_root" action="action_kf_legacy_production"
+              sequence="30" groups="base.group_user"/>
+</odoo>

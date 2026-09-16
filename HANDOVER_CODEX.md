@@ -1,5 +1,17 @@
 # Handover: Bitfarm-Importprogramm → Codex / KI-Prüfung
 
+> **Probeimport abgeschlossen 16.09.2026:** Der vollständige freigegebene
+> Rehearsal-Import auf der neutralisierten Testdatenbank `kuf-erp-all-data` ist
+> abgeschlossen. Schluss-Gate: 0 ungesperrte historische Verkaufsbelege,
+> 0 `stock.picking`, 0 `stock.move`, 0 `stock.move.line`, 0 `account.move` und
+> 0 `account.move.line`. Rückverfolgung und Produktionsdetails sind auf das feste
+> Fenster 01.01.2017 inklusive bis 01.01.2027 exklusiv begrenzt; alle
+> Wiederholungs-Dry-runs melden 0 Neuanlagen/Fremdzeilen. Restore-getestete
+> Golden-Sicherung:
+> `/var/backups/odoo/kuf-erp-all-data_20260916_233656_golden_full_rehearsal_20260916`.
+> Abschlussbericht:
+> `05_doku/PROBEIMPORT_ABSCHLUSSBERICHT_KUF_ERP_ALL_DATA_20260916.md`.
+
 > **Probeimport gestartet – Vollhistorie Einkauf und Verkauf 16.09.2026:**
 > `kuf-erp-all-data` enthält jetzt 22.010 informative Einkaufsköpfe mit 41.963
 > Positionen sowie alle 37.977 eEvolution-Verkaufsbelegköpfe, aufgeteilt in 17.207

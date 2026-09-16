@@ -1,0 +1,15 @@
+<odoo>
+    <record id="mrp_bom_form_kf_legacy_text_lines" model="ir.ui.view">
+        <field name="name">mrp.bom.form.kf.legacy.text.lines</field>
+        <field name="model">mrp.bom</field>
+        <field name="inherit_id" ref="mrp.mrp_bom_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="eEvolution-Hinweise" name="kf_legacy_text_lines"
+                      invisible="not kf_legacy_text_lines">
+                    <field name="kf_legacy_text_lines" nolabel="1" readonly="1"/>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

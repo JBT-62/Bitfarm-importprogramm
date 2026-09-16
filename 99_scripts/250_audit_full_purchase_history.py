@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 
 import migration_runtime
+import pyodbc
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -62,6 +63,42 @@ def expected_name(prefix, source_key):
     return f"{prefix}{safe_token(source_key)}"
 
 
+def source_counts():
+    connection = pyodbc.connect(
+        f"DRIVER={{{os.environ['EV_DRIVER']}}};SERVER={os.environ['EV_SERVER']};"
+        f"DATABASE={os.environ['EV_DATABASE']};UID={os.environ['EV_USER']};PWD={os.environ['EV_PASSWORD']};"
+        "Encrypt=yes;TrustServerCertificate=yes;ApplicationIntent=ReadOnly;",
+        readonly=True, timeout=30,
+    )
+    try:
+        cursor = connection.cursor()
+        cursor.execute("SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED")
+        cursor.execute("""
+            SELECT COUNT_BIG(*) FROM dbo.BESTELLUNG
+             WHERE COALESCE(BIDAT,BVDAT)>='19000101' AND COALESCE(BIDAT,BVDAT)<'20270101'
+        """)
+        lines = int(cursor.fetchone()[0])
+        cursor.execute("""
+            SELECT COUNT_BIG(*) FROM (
+                SELECT CASE WHEN ISNULL(RAHMEN,0)=0 THEN 'purchase' ELSE 'framework' END kind,
+                       CASE WHEN ISNULL(RAHMEN,0)=0
+                            THEN COALESCE(NULLIF(SAMMELBESTNR,0),BESTNR)
+                            ELSE COALESCE(NULLIF(LFDBESTRAHMEN,0),NULLIF(SAMMELBESTNR,0),BESTNR)
+                       END document_key
+                  FROM dbo.BESTELLUNG
+                 WHERE COALESCE(BIDAT,BVDAT)>='19000101' AND COALESCE(BIDAT,BVDAT)<'20270101'
+                 GROUP BY CASE WHEN ISNULL(RAHMEN,0)=0 THEN 'purchase' ELSE 'framework' END,
+                          CASE WHEN ISNULL(RAHMEN,0)=0
+                               THEN COALESCE(NULLIF(SAMMELBESTNR,0),BESTNR)
+                               ELSE COALESCE(NULLIF(LFDBESTRAHMEN,0),NULLIF(SAMMELBESTNR,0),BESTNR)
+                          END
+            ) source_documents
+        """)
+        return int(cursor.fetchone()[0]), lines
+    finally:
+        connection.close()
+
+
 def main():
     if migration_runtime.migration_mode() == "apply":
         raise RuntimeError("Dieser Audit ist ausschließlich read-only")
@@ -69,6 +106,7 @@ def main():
         raise RuntimeError("Audit ist für kuf-erp-all-data freigegeben")
 
     odoo = Odoo()
+    source_documents, source_lines = source_counts()
     documents = odoo.all(
         "kf.legacy.purchase.document", [], ["source_group_key", "line_ids", "review_status"]
     )
@@ -124,6 +162,8 @@ def main():
         "captured_at_local": datetime.now().astimezone().isoformat(timespec="seconds"),
         "documents": len(documents),
         "lines": len(lines),
+        "source_documents": source_documents,
+        "source_lines": source_lines,
         "review_documents": sum(row["review_status"] == "review" for row in documents),
         "bindings": len(bindings),
         "missing_bindings": len(missing),
@@ -140,8 +180,8 @@ def main():
         },
     }
     result["pass"] = (
-        result["documents"] == 22010
-        and result["lines"] == 41963
+        result["documents"] == source_documents
+        and result["lines"] == source_lines
         and not missing
         and not mismatched
         and not extras

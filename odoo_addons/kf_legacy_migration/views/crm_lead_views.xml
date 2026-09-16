@@ -6,10 +6,13 @@
         <field name="inherit_id" ref="crm.crm_lead_view_form"/>
         <field name="arch" type="xml">
             <xpath expr="//sheet" position="inside">
-                <group string="eEvolution-Historie" groups="base.group_system">
+                <group string="eEvolution-Historie" groups="base.group_user">
                     <field name="kf_legacy_created_at"/>
                     <field name="kf_legacy_updated_at"/>
                     <field name="kf_legacy_closed_at"/>
+                    <field name="kf_legacy_owner_number"/>
+                    <field name="kf_legacy_owner_name"/>
+                    <field name="kf_legacy_product_interest"/>
                 </group>
             </xpath>
         </field>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_template_form_kf_eevolution_group_info" model="ir.ui.view">
+        <field name="name">product.template.form.kf.eevolution.group.info</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='categ_id']" position="after">
+                <field name="kf_eevolution_group_info" readonly="1"/>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="before">
+                <field name="default_code"
+                       string="Artikelnummer"
+                       class="oe_inline me-2"
+                       style="max-width: 12rem;"
+                       placeholder="Artikelnummer"
+                       invisible="product_variant_count &gt; 1"/>
+            </xpath>
+            <xpath expr="//field[@name='categ_id']/following::field[@name='default_code'][1]" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="product_template_search_kf_article_number" model="ir.ui.view">
+        <field name="name">product.template.search.kf.article.number</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_search_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search/field[@name='name']" position="before">
+                <field name="default_code" string="Artikelnummer"/>
+            </xpath>
+            <xpath expr="//search/field[@name='name']" position="attributes">
+                <attribute name="string">Bezeichnung / Artikelnummer</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
