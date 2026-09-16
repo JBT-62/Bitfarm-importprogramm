@@ -204,7 +204,7 @@
 
 ---
 
-## 0. AKTUELLE AUFGABE FÜR CODEX (Stand 2026-08-06)
+## 0. AKTUELLE AUFGABE FÜR CODEX (Stand 2026-09-16)
 
 > **Aktualisierung 06.08.2026:** Maßgebliche Arbeitskopie ist ausschließlich
 > `V:\Claude-Projekte\odoo_projekt`. Die nachstehenden Hinweise zu
@@ -282,6 +282,117 @@
 **Ziel erreicht:** Stammdaten, CRM-Chance und Angebot 39575 wurden nach Odoo 19
 importiert. Die Mitarbeiter beginnen den manuellen Prozess beim Entwurfsangebot
 `S00001`. Siehe `05_doku/PILOTTEST_ANGEBOT_39575.md`.
+
+---
+
+### Verbindliche Migrationsregeln (REGEL-028, festgelegt 16.09.2026)
+
+Bindende Regeln in `05_doku/MIGRATIONSFILTER_UND_EK_PREISREGELN.md`:
+
+1. **Cutover-Stichtag** als Laufparameter, nicht fest im Code – UTC-Zeitstempel + `MAX(LFDNR)` je Haupttabelle
+2. **Hauptbelege vollständig**: Verkauf, Lieferscheine, Einkauf, Produktion (Köpfe), Aus-/Eingangsrechnungen
+3. **Rückverfolgung + Produktionsdetails**: nur letzte 10 Jahre vor Cutover
+4. **Lagerbewegungen**: kein operativer Nachbau; max. 5-Jahresfenster falls Sonderblock beschlossen
+5. **Rechnungen**: ausschließlich schreibgeschützte Referenzbelege, kein `account.move`, keine OP
+6. **CRM-Historie**: 10-Jahresfenster (vorläufig)
+7. **Inaktive Artikel** (`INAKTIV<>0`): als archivierte Referenzartikel (`active=False`)
+8. **Gelöschte Artikel** (`LOESCHKNZ<>0`): ausgeschlossen; bei Stücklistenbedarf → Import bricht ab
+9. **Jeder Datensatz** erhält stabile External-ID (`eevolution.*`); fehlt sie → Import bricht ab
+
+**EK-Preis-Regel:** `ARTIKEL.DEKPR` (gleitender Durchschnitt) → `standard_price` (AVCO).
+`DEKPR ≤ 0` bleibt fachlicher Prüffall; `EKPR` nur mit expliziter Freigabe als Fallback.
+
+**External-ID-Schema:** `eevolution.partner_<ADRNR>`, `eevolution.product_<LFDNR>`,
+`eevolution.bom_<LFD_NR>`, `eevolution.sale_order_<LFDNR>` usw.
+
+---
+
+### ✅ ABGESCHLOSSEN: Historische Verkaufsbelege (2026-09-16)
+
+| Kennzahl | Wert |
+|---|---|
+| eEvolution-Belege geprüft | 14.156 |
+| Odoo-Verkaufsbelege importiert (gesperrt) | 7.992 |
+| Prüffälle angelegt | 6.164 |
+| Lieferadressen übernommen | 5.055 |
+| Belege ohne gültige Position | 4.661 |
+| Unvollständige Lieferadressen | 69 |
+| Historisch nicht auflösbare Artikelbezüge | 1.439 |
+| Lieferungen / Lagerbewegungen | 0 |
+| Rechnungen / Buchungssätze | 0 |
+| Idempotenztest (neue Datensätze) | 0 |
+
+Altbelege sind technisch blockiert (kein Bestätigen, Entsperren, Fakturieren möglich).
+Backup: `/var/backups/odoo/kuf-erp-all-data_20260916_132228_post_historical_sales_full`
+Dokumentation: `05_doku/HISTORISCHE_VERKAUFSBELEGE_KUF_ERP_ALL_DATA_20260916.md`
+
+---
+
+### ▶ VERBLEIBENDER IMPORTSCOPE (nach 3D-Audit 16.09.2026)
+
+Gesamtgröße verbleibend: ~**1.145.356** zusätzliche Datensätze (ohne Produktionskomponenten: ~638.016).
+
+| Importblock | Köpfe | Positionen | Regel | Status |
+|---|---:|---:|---|---|
+| Lieferscheine | 29.483 | 107.928 | vollständig, gesperrt | ▶ offen |
+| Ausgangsrechnungen | 28.167 | 101.217 | Referenz, kein account.move | ▶ offen |
+| Eingangsrechnungen | 23.037 | 57.408 | Referenz, kein account.move | ▶ offen |
+| Alte Verkaufsbelege (vor 10 J.) | 23.821 | 104.244 | vollständig, gesperrt | ▶ offen |
+| Alte Einkaufsbelege (vor 10 J.) | 13.271 | 23.945 | vollständig, gesperrt | ▶ offen |
+| Produktionsaufträge (Köpfe) | 22.794 | – | vollständig | ▶ offen |
+| Produktionsdetails (10 J.) | – | 507.340 | 10-Jahresfenster | ▶ offen |
+| CRM-Nachimport (1 neue Chance) | 1 | 102.700 Hist. | 10-Jahresfenster | ▶ offen |
+| Bestände / Eröffnungssalden | – | – | erst zum Go-live | gesperrt |
+| Lagerplätze / Barcodes | – | – | fachliche Daten nötig | gesperrt |
+
+**Cutoff-Stichtag (festgelegt):** `2026-12-31T23:59:59` Serverzeit.
+Rehearsal-Lauf: wenige Tage vor Go-live mit dokumentierten `MAX(LFDNR)`-Obergrenzen je Haupttabelle.
+
+**Inventur:** Wird mit eEvolution durchgeführt (31.12.2026). Bestandsübernahme nach Odoo
+erfolgt aus dem eEvolution-Inventurabschluss – **nicht** aus rekonstruierten Lagerbewegungen.
+Skript `stock.quant`-Import liest `INVPOS`/`INVARTSERIE`/`INVARTCHARGE` nach Inventurabschluss.
+Lagerbewegungsblock (historisch) damit gegenstandslos.
+
+---
+
+### ▶ NÄCHSTE AUFGABE: Historische Einkaufsbelege (Vollhistorie)
+
+**Ziel:** Alle historischen Einkaufsbelege aus eEvolution nach Odoo 19 importieren –
+gesperrt, idempotent, keine Lagerbewegungen, keine Buchungen, keine E-Mails.
+
+**Quelltabellen eEvolution:**
+
+| Tabelle | Inhalt | Odoo-Ziel |
+|---|---|---|
+| `BESTELLUNG` | Einkaufsbeleg-Kopf | `purchase.order` |
+| `BESTELLPOS` | Positionen | `purchase.order.line` |
+| `LIEFERANT` | Lieferant (bereits importiert) | `res.partner` (supplier_rank≥1) |
+| `ARTIKEL` | Artikel (bereits importiert) | `product.product` |
+
+**Wichtige Felder BESTELLUNG (PK: LFDNR):**
+- `LFDNR` – Primärschlüssel
+- `LIEFNR` – FK → LIEFERANT.ADRNR
+- `BESTELLDATUM` – Bestelldatum
+- `ERLEDIGT` – 1 = abgeschlossen
+- `STORNIERT` – 1 = storniert
+- `GESAMTPREIS` – Gesamtbetrag
+
+**Wichtige Felder BESTELLPOS:**
+- `LFDNR` – Positionsnummer
+- `LFDBESTELLNR` – FK → BESTELLUNG.LFDNR
+- `LFDARTNR` – FK → ARTIKEL.LFDNR
+- `BESTELLMENGE` – Bestellmenge
+- `EINKPREIS` – Einkaufspreis
+- `MENGENSCHL` – Mengeneinheit
+- `LIEFERTERMIN` – Liefertermin
+
+**Regeln (analog Verkauf):**
+- Alle historischen Belege als `cancel` (storniert) oder gesperrt importieren
+- `locked=True` setzen, keine Wareneingänge erzeugen
+- Idempotent über externe IDs: `__import__.ev_kuf_po_<LFDNR>`
+- Nur Belege ab 2016 oder nach Absprache mit GF
+- Backup vor Import erstellen und Pfad dokumentieren
+- Wiederholungslauf muss `create=0` ergeben
 
 ### Lokale Umgebung (Windows)
 ```
