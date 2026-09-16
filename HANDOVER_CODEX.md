@@ -1,5 +1,15 @@
 # Handover: Bitfarm-Importprogramm → Codex / KI-Prüfung
 
+> **Probeimport gestartet – Vollhistorie Einkauf und Verkauf 16.09.2026:**
+> `kuf-erp-all-data` enthält jetzt 22.010 informative Einkaufsköpfe mit 41.963
+> Positionen sowie alle 37.977 eEvolution-Verkaufsbelegköpfe, aufgeteilt in 17.207
+> gesperrte historische `sale.order` und 20.770 vollständige read-only Prüfdokumente.
+> Wiederholungs-Dry-runs planen 0 Neuanlagen. Abnahme: 0 ungesperrte historische
+> Standardbelege, 0 `stock.move`, 0 `account.move`, 0 `account.move.line`.
+> Zwischenbackup vor Verkauf:
+> `/var/backups/odoo/kuf-erp-all-data_20260916_163030_post_full_purchase_pre_full_sales_20260916`.
+> Bericht: `05_doku/PROBEIMPORT_START_UND_ZWISCHENBERICHT_KUF_ERP_ALL_DATA_20260916.md`.
+
 > **Probeimport-Freigabe 16.09.2026 (`REGEL-030`):** Der vollständige Probeimport ist
 > ausschließlich auf `kuf-erp-all-data` freigegeben. Neue restore-getestete
 > Vor-Import-Sicherung:

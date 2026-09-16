@@ -1,0 +1,154 @@
+{
+  "database": "kuf-erp-all-data",
+  "phase": "pre",
+  "captured_at_local": "2026-09-16T16:24:16+02:00",
+  "source_access": "read-only",
+  "source_anchors": {
+    "ADRESS": {
+      "row_count": 7078,
+      "max_anchor": "9928",
+      "max_rowversion": 157135719,
+      "max_tmstmp": "2026-09-04 10:52:18",
+      "anchor_column": "ADRNR"
+    },
+    "KUNDE": {
+      "row_count": 3220,
+      "max_anchor": "3315",
+      "max_rowversion": 157135722,
+      "max_tmstmp": "2026-08-31 13:24:54",
+      "anchor_column": "KNDNR"
+    },
+    "LIEFERANT": {
+      "row_count": 736,
+      "max_anchor": "757",
+      "max_rowversion": 157027645,
+      "max_tmstmp": "2026-09-04 10:52:19",
+      "anchor_column": "LIEFNR"
+    },
+    "ARTIKEL": {
+      "row_count": 5971,
+      "max_anchor": "6114",
+      "max_rowversion": 157251378,
+      "max_tmstmp": "2026-09-08 13:25:55",
+      "anchor_column": "LFDNR"
+    },
+    "ANGAUFGUT": {
+      "row_count": 38720,
+      "max_anchor": "40386",
+      "max_rowversion": 157255692,
+      "max_tmstmp": "2026-09-16 14:29:46",
+      "anchor_column": "LFDNR"
+    },
+    "ANGAUFPOS": {
+      "row_count": 158531,
+      "max_anchor": "40386",
+      "max_rowversion": 157255689,
+      "max_tmstmp": "2026-09-16 14:30:00",
+      "anchor_column": "LFDANGAUFGUTNR"
+    },
+    "AAGLS": {
+      "row_count": 31161,
+      "max_anchor": 242231.0,
+      "max_rowversion": 157243772,
+      "max_tmstmp": "2026-09-16 10:29:28",
+      "anchor_column": "LSNR"
+    },
+    "AAGLSPOS": {
+      "row_count": 114979,
+      "max_anchor": 242231.0,
+      "max_rowversion": 157243705,
+      "max_tmstmp": "2026-09-16 10:29:28",
+      "anchor_column": "LSNR"
+    },
+    "AAGFAKT": {
+      "row_count": 34023,
+      "max_anchor": 34083.0,
+      "max_rowversion": 157243774,
+      "max_tmstmp": "2026-09-16 10:29:28",
+      "anchor_column": "LFDFAKTNR"
+    },
+    "AAGFAKTPOS": {
+      "row_count": 125790,
+      "max_anchor": 34083.0,
+      "max_rowversion": 157243714,
+      "max_tmstmp": "2026-09-16 10:29:29",
+      "anchor_column": "LFDFAKTNR"
+    },
+    "BESTELLUNG": {
+      "row_count": 41963,
+      "max_anchor": "317461",
+      "max_rowversion": 157250237,
+      "max_tmstmp": "2026-09-16 09:44:14",
+      "anchor_column": "BESTNR"
+    },
+    "RECHEINGANG": {
+      "row_count": 23206,
+      "max_anchor": "24127",
+      "max_rowversion": 157242972,
+      "anchor_column": "LFDNR"
+    },
+    "RECHEINPOS": {
+      "row_count": 57916,
+      "max_anchor": "24126",
+      "max_rowversion": 157242953,
+      "anchor_column": "LFDNR"
+    },
+    "PRODUKTION": {
+      "row_count": 30578,
+      "max_anchor": "266863",
+      "max_rowversion": 157255256,
+      "max_tmstmp": "2026-09-16 14:21:32",
+      "anchor_column": "LFDNR"
+    },
+    "PRODAUFINHIST": {
+      "row_count": 759107,
+      "max_anchor": 759547.0,
+      "max_rowversion": 157247504,
+      "max_tmstmp": "2026-09-16 11:27:33",
+      "anchor_column": "LFDNR"
+    },
+    "SNRARCHIV": {
+      "row_count": 721977,
+      "max_anchor": 27,
+      "max_rowversion": 157252925,
+      "max_tmstmp": "2026-09-16 13:23:23",
+      "anchor_column": "LFDSNLFDNR"
+    },
+    "CHARGENARCHIV": {
+      "row_count": 153230,
+      "max_anchor": 10646,
+      "max_rowversion": 157234117,
+      "max_tmstmp": "2026-09-16 08:37:41",
+      "anchor_column": "LFDCHLFDNR"
+    },
+    "TERMIN": {
+      "row_count": 187167,
+      "max_anchor": "189067",
+      "max_rowversion": 157256059,
+      "max_tmstmp": "2026-09-16 14:30:25",
+      "anchor_column": "TMNR"
+    },
+    "VERKAUFSCHANCE": {
+      "row_count": 1365,
+      "max_rowversion": 157258018,
+      "anchor_column": null
+    }
+  },
+  "odoo_guardrails": {
+    "historical_sale_orders": 7992,
+    "historical_sale_orders_unlocked": 0,
+    "historical_documents_locked": true,
+    "legacy_sales_review_documents_read_only": 6164,
+    "legacy_purchase_documents_read_only": 8739,
+    "stock_moves": 0,
+    "stock_move_lines": 0,
+    "stock_pickings": 0,
+    "account_moves": 0,
+    "account_move_lines": 0,
+    "required_metrics_pass": true
+  },
+  "interpretation": {
+    "max_anchor": "Anker für neu angelegte Quellsätze",
+    "count_rowversion_tmstmp": "Zusatzanker, weil MAX des Geschäftsschlüssels Änderungen an bestehenden Sätzen allein nicht erkennt"
+  }
+}
