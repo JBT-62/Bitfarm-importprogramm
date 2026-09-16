@@ -7,7 +7,7 @@
 
 ---
 
-## 0. AKTUELLE AUFGABE FÜR CODEX (Stand 2026-08-06)
+## 0. AKTUELLE AUFGABE FÜR CODEX (Stand 2026-09-16)
 
 > **Aktualisierung 06.08.2026:** Maßgebliche Arbeitskopie ist ausschließlich
 > `V:\Claude-Projekte\odoo_projekt`. Die nachstehenden Hinweise zu
@@ -58,6 +58,69 @@
 **Ziel erreicht:** Stammdaten, CRM-Chance und Angebot 39575 wurden nach Odoo 19
 importiert. Die Mitarbeiter beginnen den manuellen Prozess beim Entwurfsangebot
 `S00001`. Siehe `05_doku/PILOTTEST_ANGEBOT_39575.md`.
+
+---
+
+### ✅ ABGESCHLOSSEN: Historische Verkaufsbelege (2026-09-16)
+
+| Kennzahl | Wert |
+|---|---|
+| eEvolution-Belege geprüft | 14.156 |
+| Odoo-Verkaufsbelege importiert (gesperrt) | 7.992 |
+| Prüffälle angelegt | 6.164 |
+| Lieferadressen übernommen | 5.055 |
+| Belege ohne gültige Position | 4.661 |
+| Unvollständige Lieferadressen | 69 |
+| Historisch nicht auflösbare Artikelbezüge | 1.439 |
+| Lieferungen / Lagerbewegungen | 0 |
+| Rechnungen / Buchungssätze | 0 |
+| Idempotenztest (neue Datensätze) | 0 |
+
+Altbelege sind technisch blockiert (kein Bestätigen, Entsperren, Fakturieren möglich).
+Backup: `/var/backups/odoo/kuf-erp-all-data_20260916_132228_post_historical_sales_full`
+Dokumentation: `05_doku/HISTORISCHE_VERKAUFSBELEGE_KUF_ERP_ALL_DATA_20260916.md`
+
+---
+
+### ▶ NÄCHSTE AUFGABE: Historische Einkaufsbelege
+
+**Ziel:** Historische Einkaufsbelege aus eEvolution nach Odoo 19 importieren –
+analog zum Verkaufsbelegimport: gesperrt, idempotent, keine Lagerbewegungen,
+keine Buchungen, keine E-Mails.
+
+**Quelltabellen eEvolution:**
+
+| Tabelle | Inhalt | Odoo-Ziel |
+|---|---|---|
+| `BESTELLUNG` | Einkaufsbeleg-Kopf | `purchase.order` |
+| `BESTELLPOS` | Positionen | `purchase.order.line` |
+| `LIEFERANT` | Lieferant (bereits importiert) | `res.partner` (supplier_rank≥1) |
+| `ARTIKEL` | Artikel (bereits importiert) | `product.product` |
+
+**Wichtige Felder BESTELLUNG (PK: LFDNR):**
+- `LFDNR` – Primärschlüssel
+- `LIEFNR` – FK → LIEFERANT.ADRNR
+- `BESTELLDATUM` – Bestelldatum
+- `ERLEDIGT` – 1 = abgeschlossen
+- `STORNIERT` – 1 = storniert
+- `GESAMTPREIS` – Gesamtbetrag
+
+**Wichtige Felder BESTELLPOS:**
+- `LFDNR` – Positionsnummer
+- `LFDBESTELLNR` – FK → BESTELLUNG.LFDNR
+- `LFDARTNR` – FK → ARTIKEL.LFDNR
+- `BESTELLMENGE` – Bestellmenge
+- `EINKPREIS` – Einkaufspreis
+- `MENGENSCHL` – Mengeneinheit
+- `LIEFERTERMIN` – Liefertermin
+
+**Regeln (analog Verkauf):**
+- Alle historischen Belege als `cancel` (storniert) oder gesperrt importieren
+- `locked=True` setzen, keine Wareneingänge erzeugen
+- Idempotent über externe IDs: `__import__.ev_kuf_po_<LFDNR>`
+- Nur Belege ab 2016 oder nach Absprache mit GF
+- Backup vor Import erstellen und Pfad dokumentieren
+- Wiederholungslauf muss `create=0` ergeben
 
 ### Lokale Umgebung (Windows)
 ```
