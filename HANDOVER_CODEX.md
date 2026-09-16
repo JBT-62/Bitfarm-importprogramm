@@ -1,5 +1,171 @@
 # Handover: Bitfarm-Importprogramm → Codex / KI-Prüfung
 
+> **Probeimport-Freigabe 16.09.2026 (`REGEL-030`):** Der vollständige Probeimport ist
+> ausschließlich auf `kuf-erp-all-data` freigegeben. Neue restore-getestete
+> Vor-Import-Sicherung:
+> `/var/backups/odoo/kuf-erp-all-data_20260916_160506_pre_authorized_full_rehearsal_retry_20260916`.
+> Vorab-Gate: 7.992/7.992 historische `sale.order` gesperrt, 0 `stock.move`,
+> 0 `account.move`, 0 `account.move.line`; eEvolution-Anker für 19 Haupttabellen sind
+> festgehalten. Nach jedem Importblock und abschließend dieselben Metriken protokollieren.
+> Keine Freigabe für finalen Cutover, Produktion oder eEvolution-Writes. Nachweis:
+> `05_doku/PROBEIMPORT_FREIGABE_KUF_ERP_ALL_DATA_20260916.md`.
+
+> **External-ID-Übergang 16.09.2026 (`REGEL-031`):** Zielnamensraum ist `eevolution`.
+> Vorhandene `__import__`-Bindings dürfen nicht durch bloßes Umschalten abgeschnitten
+> werden. Nach dem aktuellen Probeimport kontrollierte Binding-Migration/Alias-Auflösung,
+> danach `pilot_import_angebot.py` umstellen und Idempotenz prüfen.
+
+> **Go-live und Cutoff 16.09.2026 (`REGEL-029`):** Go-live ist der 01.01.2027.
+> Oberer Cutoff exklusiv `2027-01-01 00:00:00 Europe/Berlin`; technisches
+> Zehnjahresfenster ab inklusive `2017-01-01 00:00:00`. Nach vollständigem Rehearsal
+> unveränderliche restore-getestete Golden-Sicherung erstellen und nur eine neutralisierte
+> Kopie für Test/Schulung freigeben. Schulungs-DB nie produktiv setzen; Produktivsystem
+> reproduzierbar nach finalem eEvolution-Freeze und Cutover neu aufbauen. Ablauf:
+> `05_doku/CUTOVER_UND_SCHULUNGSPLAN_GO_LIVE_20270101.md`.
+
+> **Verbindlicher Historienumfang 16.09.2026 (`REGEL-028`):** Vollständige
+> Hauptbeleggeschichte für Verkauf, Lieferscheine, Einkauf, Produktionsauftragsköpfe,
+> Ausgangs- und Eingangsrechnungen einschließlich Belegpositionen. Technische
+> Serien-/Chargenrückverfolgung und Produktionsdetails nur letzte zehn Jahre; ältere
+> Produktionsaufträge nur als Kopf. Keine einzelnen operativen Lagerbuchungen und keine
+> Buchungssätze aus historischen Rechnungen. CRM-Althistorie sowie exakter oberer Cutoff
+> bleiben in `OFFEN-009` separat zu klären.
+
+> **Historische Einkaufsbelege 16.09.2026:** Auf `kuf-erp-all-data` sind
+> 8.739 wirkungsfreie, schreibgeschützte eEvolution-Einkaufsbelege mit 18.018
+> Originalpositionen importiert. 8.702 Bestellungen und 37 Rahmenvertragsbelege;
+> 513 Belege mit sichtbarem Prüfkennzeichen, 0 Positionen ohne Odoo-Artikelbezug.
+> Keine `purchase.order`, `purchase.requisition`, Pickings, Stock Moves,
+> Account Moves oder E-Mails erzeugt. Finaler Wiederholungslauf 0/0.
+> Modul `kf_legacy_migration` 19.0.11.0.0. Nachweis:
+> `05_doku/HISTORISCHE_EINKAUFSBELEGE_KUF_ERP_ALL_DATA_20260916.md`.
+> Restore-getestete Abschlusssicherung:
+> `/var/backups/odoo/kuf-erp-all-data_20260916_145344_post_historical_purchase_full`.
+
+> **Vollständige Legacy-Rückverfolgung 16.09.2026:** Auf `kuf-erp-all-data`
+> sind für den Zeitraum 16.09.2016 bis einschließlich 16.09.2026 exakt 49.472
+> Serien-/Chargenköpfe und 322.386 Ereignisse geladen. Dazu gehören 7.784
+> informative Produktionsaufträge, 251.767 Komponentenbuchungen, 31.580
+> Produktionsausgaben, 178.603 Verwendungsbeziehungen und 41.112 direkte
+> Liefernachweise. Quelle/Ziel-Abgleich stimmt; alle inaktiven Artikel sind
+> verknüpft; finaler Wiederholungslauf überall 0 Änderungen. Keine Pickings,
+> Stock Moves oder Account Moves. Restore-getestete Abschlusssicherung:
+> `/var/backups/odoo/kuf-erp-all-data_20260916_142225_post_full_traceability_import`.
+> Gesamtbericht:
+> `05_doku/GESAMTBERICHT_DATENBESTAND_KUF_ERP_ALL_DATA_20260916.md`.
+
+> **Historische Verkaufsbelege 16.09.2026:** Auf `kuf-erp-all-data` sind 7.992
+> wirkungslose, gesperrte eEvolution-Verkaufsbelege, 6.164 vollständige Legacy-Prüffälle
+> und 5.055 belegbezogene Lieferadressen importiert. Keine Lieferungen, Lagerbewegungen,
+> Rechnungen, Buchungssätze oder E-Mails wurden erzeugt; Idempotenz-Dry-run 0/0/0.
+> `kf_legacy_migration` steht auf `19.0.10.0.0` und blockiert Änderungen, Bestätigung,
+> Entsperren und Rechnungserzeugung historischer Belege. Nachweis:
+> `05_doku/HISTORISCHE_VERKAUFSBELEGE_KUF_ERP_ALL_DATA_20260916.md`.
+
+> **Projektverfassung und Projektgedaechtnis (24.08.2026):** Vor jeder neuen
+> Aufgabe zuerst `00_PROJEKTVERFASSUNG_ODOO.md`, danach
+> `ODOO_PROJEKT_ENTSCHEIDUNGSREGISTER.md`,
+> `05_doku/ODOO_PROJEKT_REGELCHRONIK_20260824.md`,
+> `05_doku/EEVOLUTION_ODOO_MAPPING_STANDARD.md` und
+> `ODOO_OFFENE_ENTSCHEIDUNGEN.md` lesen. Aktive Regeln stehen im
+> Entscheidungsregister mit Status `AKTIV`; ersetzte oder verworfene Regeln
+> duerfen nicht weiterverwendet werden. Bei widerspruechlichen oder fehlenden
+> Nachweisen gilt Rueckfragepflicht statt Interpretation.
+
+> **Verbindliches Masterkonzept (23.08.2026):** Vor neuen
+> Migrationsaufgaben zuerst
+> `05_doku/PROJEKT_GRUNDKONZEPT_MIGRATION_UND_BETA_REBUILD.md` lesen und
+> einordnen, in welche Phase die Aufgabe gehoert und welche Abhaengigkeiten
+> erfuellt sein muessen. Vor jedem Write pruefen: Discovery, fachliches
+> Datenmodell, Mapping, Dry-run, Freigabe, Backup, Read-back-Plan und
+> Idempotenzpruefung des betroffenen Blocks muessen abgeschlossen bzw.
+> explizit belegt sein. Ein vorhandenes Skript ist allein kein fachlicher
+> Vollstaendigkeitsnachweis.
+
+> **Fakten- und Quellenregel (23.08.2026):** Fakt vor Interpretation.
+> Ein vorhandener Odoo-Wert ist kein Quellnachweis. Fuer jeden migrierten
+> oder zu korrigierenden Wert muss die Kette `eEvolution-Quelle ->
+> Quellfeld/Relation -> Quellwert -> Transformationsregel -> Odoo-Zielfeld ->
+> Odoo-Wert` belegbar sein. Wenn nicht, gilt:
+> `UNGEKLÄRT – KEINE ANNAHME GETROFFEN`. Nachweis und aktueller Audit:
+> `05_doku/FAKTEN_QUELLENREGEL_UND_PIA_SCOPE_AUDIT_20260823.md`.
+
+> **Pflichteinstieg für neue Chats (20.08.2026):** Zuerst
+> `05_doku/START_HIER_NEUER_CHAT_20260820.md` vollständig lesen. Dort sind der
+> konsolidierte Artikelstamm-Stand, bestätigte Fachentscheidungen, ausdrücklich
+> noch offene Punkte und der nächste belastbare Arbeitsblock getrennt dokumentiert.
+> Ältere Aussagen zur Artikelklassifikation nicht isoliert fortschreiben.
+
+> **Artikelklassifizierung V2.1 (23.08.2026):** Die konservative
+> PIA-Artikelklassifizierung ist als wiederverwendbare Engine unter
+> `artikelklassifizierung/` verankert. Referenzstand:
+> `KF_ARTIKELCLASSIFIER_V2.1`; Regressionstests:
+> `artikelklassifizierung/tests/`. Regelwerk und Odoo-Pilotplanung:
+> `05_doku/ARTIKELKLASSIFIZIERUNG_REGELWERK_V21_20260823.md` und
+> `05_doku/ARTIKELKLASSIFIZIERUNG_ARCHITEKTUR_UND_ODOO_PILOT_20260823.md`.
+> Keine produktive Odoo-Freigabe, keine Varianten-/Attributanlage.
+
+> **Einkaufsbeschreibung 18.08.2026:** `ARTIKEL.ABEZ3–8` werden zeilenweise
+> nach `product.template.description_purchase` übernommen. Auf `kuf-erp-2`:
+> 247 geschrieben, 21 Quelltexte leer, 0 Konflikte, Wiederholungs-Dry-Run 0
+> Änderungen. Sicherung:
+> `/var/backups/odoo/kuf-erp-2_20260818_131646_pre_purchase_descriptions`.
+> Nachweis: `05_doku/EINKAUFSBESCHREIBUNGEN_ABEZ3_8_KUF_ERP_2_20260818.md`.
+
+> **Kritische Artikelstamm-Lücke 18.08.2026:** Vollständiger Live-Audit von
+> `dbo.ARTIKEL`: 252 Spalten, 5.958 importfähige Artikel, 17 Felder explizit
+> in `product.yaml`, 85 befüllte Felder derzeit ungemappt. In `kuf-erp-2` haben
+> 0/268 PIA-Produkte eine interne Beschreibung und nur 9/268 eine Kategorie.
+> Keine Odoo-Schreibzugriffe. Nachweis:
+> `05_doku/VOLLSTAENDIGKEITSPRUEFUNG_ARTIKELSTAMM_20260818.md`.
+
+> **Verbindliche Lieferanten-Importregel 20.08.2026:**
+> `ARTIKEL.LFDLIEFNR` ist immer der erste/A-Lieferant in Odoo. Weitere aktuelle
+> Beziehungen stammen aus `LIEFERPREISE` und folgen mangels eines nachgewiesenen
+> B-/C-Rangfelds deterministisch nach Lieferantennummer. Hauptlieferanten auch
+> ohne Preis- oder Bestellhistorie anlegen; Odoo-only-/historische Zeilen
+> erhalten und ab Sequenz 900 nachordnen. Die vollständige Kontrollfolge steht
+> in `05_doku/START_HIER_NEUER_CHAT_20260820.md`, Abschnitt 7. Referenz:
+> `99_scripts/113_sync_supplier_priority.py` und
+> `05_doku/LIEFERANTENPRIORITAET_ABC_KAUFTEILE_KUF_ERP_2_20260820.md`.
+
+> **Verbindliche Rahmenvertrags-Importregel 20.08.2026:** 114 Einkaufsrahmen-
+> verträge aus `BESTRAHMEN` und 171 Positionen aus `BESTELLUNG` mit `RAHMEN=1`
+> wurden migriert. Bei aktiven Verträgen ist ausschließlich
+> `max(BESTMENGE-GELMENGE-RESMENGE,0)` erneut abrufbar. Vertragspreise bleiben
+> getrennt von allgemeinen `product.supplierinfo`-Konditionen. Erledigte und
+> abgelaufene Verträge nur geschlossen/archiviert übernehmen; bestehende Abrufe
+> später separat als offene Bestellungen migrieren. Vollständige Regel:
+> `05_doku/START_HIER_NEUER_CHAT_20260820.md`, Abschnitt 8. Nachweis:
+> `05_doku/RAHMENVERTRAEGE_EINKAUF_KUF_ERP_2_20260820.md`.
+
+> **Buchhaltungsantworten 18.08.2026:** `840500`/`840100` sind als reguläre
+> Produkt-Erlöskonten bestätigt; `812500`/`812000` sollen über Fiskalpositionen
+> gesteuert werden. `390000`–`392000` sind als Produkt-Aufwandskonten verworfen;
+> die richtigen Konten liegen im 34er-Bereich und fehlen noch aus der SuSa-Liste.
+> Bestandsveränderungen wurden mit `896000`/`898000` benannt, die konkrete
+> Odoo-Verwendung ist noch offen. Der Kontensync sperrt Aufwands-Schreibvorgänge
+> bis zur Allowlist-Freigabe. Nachweis:
+> `05_doku/BUCHHALTUNGSANTWORTEN_KONTIERUNG_20260818.md`.
+
+> **AVCO/DEKPR 18.08.2026:** Auf `kuf-erp-2` wurden 17 K&F-Kategorien auf
+> Durchschnittskosten (AVCO) gestellt und 115 abweichende positive Werte aus
+> `ARTIKEL.DEKPR` nach `product.template.standard_price` übernommen. 18
+> `DEKPR=0`-Fälle bleiben bewusst ungeändert. Wiederholungs-Dry-Run: 0 Änderungen.
+> Nachweis: `05_doku/AVCO_DEKPR_UMSTELLUNG_KUF_ERP_2_20260818.md`.
+
+> **Abrufbarer nächster Schritt (17.08.2026):** Wenn der Benutzer **„Testlauf“**
+> schreibt, den in `05_doku/NEXT_STEP_TESTLAUF_PIA.md` definierten operativen
+> PIA-Ende-zu-Ende-Test auf `kuf-erp-2` fortsetzen. Vor Schreibzugriff Live-Preflight,
+> Anpassungsprüfung der alten Testskripte, Dry-Run und neue verifizierte Vollsicherung.
+>
+> **Sicherheitsarchitektur 17.08.2026:** Zieldatenbanken werden zentral über
+> `02_mappings/allowed_target_databases.yaml` freigegeben. Alle direkten Odoo-RPC-
+> Proxies laufen über `99_scripts/migration_runtime.py`; der Guard arbeitet
+> fail-closed mit Lesemethoden-Positivliste und erzeugt keine Fake-Dry-Run-Werte
+> mehr. Umsetzung und Nachweise:
+> `05_doku/ZENTRALE_ZIELDATENBANK_SICHERHEIT_20260817.md`.
+
 **Projekt:** Datenmigration eEvolution (MS SQL Server) → Odoo 19 Enterprise  
 **Auftraggeber:** Kling & Freitag GmbH (K&F), Hannover – Hersteller professioneller Beschallungssysteme  
 **Branch:** `claude/eevolution-mapping-validation-iemk0y`  
@@ -14,6 +180,13 @@
 > `C:\temp\bitfarm-repo`, Kopierarbeiten und einem Einzelangebot sind überholt.
 >
 > Aktueller Stand:
+> - 32 aktive TimeInfo-Personen sind auf `erp-test-1` ausschließlich als
+>   `hr.employee` importiert: 27 neu, 5 vorhandene eindeutig verknüpft,
+>   0 Benutzerkonten und 0 Zeiterfassungsbuchungen. Die Wiederholung ist
+>   idempotent (`create=0`, 32 unverändert). Reproduzierbar über
+>   `02_mappings/timeinfo_employees.yaml` und
+>   `99_scripts/45_import_timeinfo_employees.py` als Schritt 5 von `run_all.py`.
+>   `02_load_partners.py` legt standardmäßig keine Mitarbeiter-Benutzer mehr an.
 > - Pilotangebot eEvolution 39575 wurde idempotent nach `erp-test-1` importiert:
 >   CRM-Chance, Kunde, 5 Ansprechpartner, 51 Lieferanten, 152 Artikel,
 >   34 Stücklisten mit 186 Positionen und Odoo-Angebot `S00001` mit 5 Positionen.
@@ -52,8 +225,28 @@
 >   wiederholen sowie CRM-Stufen und weitere Quelldaten laden.
 > - Arbeitsplätze, Qualitätsprüfpläne, Rollen, DATEV-Testexport und konkrete Carrier-Connectoren
 >   benötigen fachliche Daten/Entscheidungen und Ende-zu-Ende-Abnahme.
+> - Der in `erp-test` vorbereitete sechsstellige SKR03-Kontenrahmen wurde am 06.08.2026
+>   kontrolliert nach `erp-test-1` synchronisiert: 1.354 Konten, keine Code-Dubletten,
+>   keine temporären Codes, 72 stabile External IDs für K&F-Zusatzkonten und weiterhin
+>   null Buchungen/Buchungszeilen. Sicherung davor:
+>   `/var/backups/odoo/erp-test-1_20260806_202214_pre_coa_sync`. Nachweis:
+>   `05_doku/KONTENRAHMEN_SYNC_ERP_TEST_NACH_ERP_TEST_1_20260806.md`.
 > - Alle früher im Repository abgelegten Klartext-Serverkennwörter wurden entfernt;
 >   das betroffene Kennwort muss rotiert werden.
+> - Finanz-Audit 06.08.2026: Die laufende Buchführung in Odoo und das interne
+>   GF-Berichtswesen sind als vorgeschlagenes Zielbild dokumentiert; das Steuerbüro
+>   bleibt Prüfer. Eine GF-Freigabe und endgültige Rollenvergabe stehen noch aus.
+> - Der Entscheidungs- und Fragenkatalog liegt als MD und DOCX unter
+>   `05_doku/FRAGENKATALOG_INTERNE_BUCHFUEHRUNG_ODOO.*` vor.
+> - Eine sachliche GF-Entscheidungsgrundlage mit risikobegrenztem Pilot,
+>   konkreten Sicherheitskontrollen, Stop-Kriterien, Beschlussvorschlag und
+>   Gesprächseinstieg liegt unter
+>   `05_doku/GF_ENTSCHEIDUNGSGRUNDLAGE_INTERNE_BUCHFUEHRUNG_ODOO.*` vor.
+> - Produktkontierungs-Dry-Run: 152 Pilotartikel, davon Erlös 840500 (146) bzw.
+>   840100 (6). Acht benötigte Aufwandskonten fehlen noch in Odoo; die vorbereitete
+>   wiederholbare Synchronisierung liegt in `99_scripts/30_sync_product_accounts.py`.
+>   Vorratskonten werden wegen drei mehrdeutigen Quellregeln und fehlender Konten
+>   397100/397200/397300 noch nicht geschrieben.
 
 **Ziel erreicht:** Stammdaten, CRM-Chance und Angebot 39575 wurden nach Odoo 19
 importiert. Die Mitarbeiter beginnen den manuellen Prozess beim Entwurfsangebot
@@ -277,7 +470,7 @@ ADRESS.KUND_FLAG    → KUNDE         # =1 wenn Kunde
 ADRESS.LIEF_FLAG    → LIEFERANT     # =1 wenn Lieferant
 
 # LIEFERANT
-LIEFERANT.PK        → ADRNR
+LIEFERANT.PK        → LIEFNR        # ADRNR ist nicht der Primärschlüssel
 LIEFERANT.NAME      → NAME1
 LIEFERANT.ORT       → ORT
 LIEFERANT.EMAIL     → EMAIL
@@ -354,7 +547,9 @@ JOIN ARTIKEL a_komp ON a_komp.LFDNR = i.ART_NR
 12. **Retry-Pattern** für XML-RPC: Odoo-Worker recyceln nach ~200 Requests
 13. **`product.supplierinfo` min_qty** Pflichtfeld (0, nicht None)
 14. **`account.payment.term` lines** Pflichtfeld
-15. **Externe IDs** für Idempotenz: `ev_kuf_adr_<ADRNR>`, `ev_kuf_art_<LFDNR>`
+15. **Externe IDs** für Idempotenz: verbindlich gemäß
+    `05_doku/EEVOLUTION_ODOO_MAPPING_STANDARD.md`, insbesondere
+    `ev_adr_<ADRNR>` und `ev_product_<LFDNR>` im Modul `__import__`
 16. **`res.partner` `type`** für Lieferadressen: `'delivery'` (nicht `'shipping'`)
 17. **ANGAUFGUT Demultiplex**: **KEIN** `BELEGTYP`-Feld! Stattdessen Boolean-Flags:
     `ANGEBOT=1` → Angebot, `AUFTRAG=1` → Auftrag, `GUTSCHRIFT=1` → Gutschrift
@@ -469,7 +664,9 @@ Prüfe ob alle verwendeten Odoo-Felder in `odoo_schema.json` vorhanden sind.
 Insbesondere die Pitfalls aus Abschnitt 7 beachten.
 
 ### D. Externe IDs
-Prüfe ob das Schema `ev_kuf_adr_<ADRNR>` und `ev_kuf_art_<LFDNR>` konsistent verwendet wird.
+Prüfe, ob die verbindlichen Namensräume aus
+`05_doku/EEVOLUTION_ODOO_MAPPING_STANDARD.md` konsistent verwendet werden,
+insbesondere `ev_adr_<ADRNR>` und `ev_product_<LFDNR>`.
 
 ### E. Sicherheit
 - Keine Credentials in Code

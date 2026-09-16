@@ -1,15 +1,18 @@
 # Migrationsfilter und EK-Preisregeln
 
-Stand: 6. August 2026
+Stand: 16. September 2026
 
 ## Verbindliche Auswahlregeln
 
-1. Der Cutover-Stichtag wird als Laufparameter übergeben und nicht fest im Code hinterlegt.
-2. Geschäftsvorgänge werden nur übernommen, wenn ihr fachliches Belegdatum höchstens zehn Jahre vor dem Cutover liegt.
-3. Lagerbewegungen werden nur für die letzten fünf Jahre vor dem Cutover übernommen.
-4. `ARTIKEL.INAKTIV` ist bei K&F ausdrücklich **kein Ausschlusskriterium**. Benötigte Artikel werden unabhängig von diesem Kennzeichen importiert.
-5. Nur Artikel mit `ARTIKEL.LOESCHKNZ <> 0` werden ausgeschlossen. Verweist eine benötigte Stückliste auf einen löschgekennzeichneten Artikel, muss der Import abbrechen und eine fachliche Ersatzentscheidung verlangen.
-6. Jeder importierte Datensatz erhält eine stabile Odoo-External-ID.
+1. Produktiver Go-live ist der 01.01.2027. Der fachliche Cutoff ist das Ende des 31.12.2026; technisch gilt als obere exklusive Grenze `2027-01-01 00:00:00 Europe/Berlin`. Diese Grenze wird als Laufparameter übergeben und nicht still aus dem Laufdatum abgeleitet.
+2. Historische Hauptbelege werden über die vollständige belegte eEvolution-Historie übernommen: Verkaufsbelege, Lieferscheine, Einkaufsbelege, Produktionsauftragsköpfe, Ausgangsrechnungen und Eingangsrechnungen einschließlich ihrer Belegpositionen.
+3. Technische Serien-/Chargenrückverfolgung und Produktionsdetails werden für das feste Halbintervall `2017-01-01 00:00:00` inklusive bis `2027-01-01 00:00:00 Europe/Berlin` exklusiv übernommen. Dazu gehören tatsächliche Komponentenbuchungen, Produktionsausgaben mit Serien/Chargen und abgeleitete Verwendungsbeziehungen. Ältere Produktionsaufträge erhalten nur den informativen Kopf.
+4. Einzelne historische Lagerbuchungen werden nicht operativ nachgebaut. Sollte später ein gesonderter Lagerbewegungsblock beschlossen werden, gilt dafür weiterhin maximal das Fünfjahresfenster.
+5. Historische Rechnungen werden ausschließlich als schreibgeschützte Referenzbelege ohne `account.move`, offene Posten oder Buchungssätze übernommen.
+6. CRM-Termine und CRM-Freitexthistorie bleiben bis zur gesonderten Aufbewahrungsentscheidung im Zehnjahresfenster; CRM ist kein Hauptbeleg im Sinne von Regel 2.
+7. Artikel mit `ARTIKEL.INAKTIV <> 0` werden als archivierte Referenzartikel übernommen (`active=False`, `sale_ok=False`, `purchase_ok=False`).
+8. Artikel mit `ARTIKEL.LOESCHKNZ <> 0` werden ausgeschlossen. Verweist eine benötigte Stückliste auf einen ausgeschlossenen Artikel, muss der Import abbrechen und eine fachliche Ersatzentscheidung verlangen.
+9. Jeder importierte Datensatz erhält eine stabile Odoo-External-ID.
 
 ## Live ermittelte Filterwirkung
 
@@ -21,42 +24,34 @@ Stand: 6. August 2026
 
 ## Durchschnittlicher Einkaufspreis
 
-Die zunächst vermuteten Tabellen `RECHKOPFEINGANG` und `RECHPOSEINGANG` sind in der Datenbank leer und können nicht als historische Preisquelle verwendet werden.
+eEvolution führt den gleitenden Durchschnitts-Einkaufspreis bereits in
+`ARTIKEL.DEKPR`. Dieser Wert wird als Startkostenwert nach
+`product.template.standard_price` übernommen. Die Odoo-Produktkategorien werden
+auf **Durchschnittskosten (AVCO)** gestellt; zukünftige bewertete Zugänge führen
+den mengengewichteten Durchschnitt in Odoo fort.
 
-Als belastbare Quelle wird `BESTELLUNG` verwendet:
+`ARTIKEL.EKPR` ist der letzte beziehungsweise aktuelle Einkaufspreis und darf den
+AVCO-Kostenwert nicht regelmäßig überschreiben. Lieferantenspezifische Preise
+werden getrennt in `product.supplierinfo` geführt.
 
-- `BESTELLUNG.ARTNR` verweist vollständig auf `ARTIKEL.LFDNR` (41.806 von 41.806 Zeilen zuordenbar).
-- Innerhalb des rollierenden Zehnjahresfensters liegen 18.015 Bestellzeilen für 2.677 Artikel vor.
-- `ARTIKEL.EKPR` bleibt nur ein Fallback für aktive Artikel ohne valide Preisbeobachtung im freigegebenen Zeitraum.
-
-Empfohlene fachliche Definition:
-
-```text
-Durchschnitts-EK je Artikel =
-Summe(Netto-EK je Basiseinheit × gültige Menge)
-÷ Summe(gültige Menge)
-```
-
-Vor Umsetzung müssen folgende Bestandteile mit Einkauf/Controlling anhand von mindestens zehn Artikeln geprüft werden:
-
-- Welche Werte von `BESTSTATUS` gelten als abgeschlossen und preiswirksam?
-- Ist `RABATTGESAMMT` ein Prozent- oder Betragswert?
-- Wie werden `PREISEINHEIT`, `FAKTOR`, `UMRECHKURS` und `UMRECHEINHEIT` exakt angewendet?
-- Sollen Rückgaben, Stornos und negative Mengen ausgeschlossen oder gegenläufig berücksichtigt werden?
-- Soll der Durchschnitt mengen­gewichtet oder zeitlich gewichtet sein? Empfohlen ist mengen­gewichtet.
-- Soll der ermittelte Wert in `product.template.standard_price` geschrieben oder zunächst nur als Prüfwert bereitgestellt werden?
+`DEKPR <= 0` wird nicht automatisch als Kostenwert geschrieben. Solche Artikel
+bleiben fachliche Prüffälle; ein positiver `EKPR` darf nur nach ausdrücklich
+freigegebener Fallback-Regel verwendet werden.
 
 ## Zeitfelder
 
-Der Zehnjahresfilter muss je Objekt auf das fachliche Belegdatum angewendet werden. Technische Felder wie `TMSTMP` oder ein zukünftiges Lieferdatum sind dafür nicht geeignet.
+Der Zehnjahresfilter wird nur auf technische Rückverfolgung, Produktionsdetails und vorläufig auf CRM-Historie angewendet. Hauptbelege werden vollständig übernommen. Technische Felder wie `TMSTMP` oder ein zukünftiges Lieferdatum sind weder als fachliches Belegdatum noch als unterer Altersfilter geeignet.
 
 Vorläufige Zuordnung:
 
 | Objekt | Fachliches Filterdatum |
 |---|---|
-| Angebote/Aufträge | `ANGAUFGUT.ERFASSDATUM` |
-| Bestellungen/EK-Historie | `COALESCE(BESTELLUNG.BIDAT, BESTELLUNG.BVDAT)` |
-| Rechnungen | jeweiliges Rechnungs-/Buchungsdatum |
+| Angebote/Aufträge | `ANGAUFGUT.ERFASSDATUM`; vollständige Historie |
+| Lieferscheine | `AAGLS.LSDATUM`; vollständige Historie |
+| Bestellungen/EK-Historie | `COALESCE(BESTELLUNG.BIDAT, BESTELLUNG.BVDAT)`; vollständige Historie |
+| Produktionsauftragskopf | fachlich freizugebende Produktionsdatumspriorität; vollständige Historie |
+| Produktionsdetails | jeweiliges Buchungs-/Einlagerungsdatum; zehn Jahre |
+| Ausgangs-/Eingangsrechnungen | `AAGFAKT.FAKTDATUM` / `RECHEINGANG.RECHDATUM`; vollständige Historie |
 | Lagerbewegungen | `LAGERBEWEGUNG.BUCHDATUM` |
 | Seriennummern | `INVARTSERIE.EINKAUFSDATUM` |
 | Chargen | `COALESCE(INVARTCHARGE.EINKAUFSDATUM, INVARTCHARGE.HERSTELLDATUM)` |
@@ -73,7 +68,7 @@ Vorläufige Zuordnung:
 - von Odoo berechnete Summen, Restbeträge und Lagerbewertungen,
 - wirkungslose Lagerbewegungen mit Menge null,
 - Artikel mit gesetztem `LOESCHKNZ`,
-- alte Vorgänge außerhalb des jeweiligen Zeitfensters,
+- Serien-/Chargen- und Produktionsdetaildaten außerhalb des Zehnjahresfensters,
 - Legacy-Integrationsfelder wie Outlook-IDs und lokale Datei-/Bildpfade ohne bestätigten Nutzen.
 
 ## External IDs
