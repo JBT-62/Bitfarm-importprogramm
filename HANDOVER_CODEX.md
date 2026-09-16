@@ -61,6 +61,28 @@ importiert. Die Mitarbeiter beginnen den manuellen Prozess beim Entwurfsangebot
 
 ---
 
+### Verbindliche Migrationsregeln (REGEL-028, festgelegt 16.09.2026)
+
+Bindende Regeln in `05_doku/MIGRATIONSFILTER_UND_EK_PREISREGELN.md`:
+
+1. **Cutover-Stichtag** als Laufparameter, nicht fest im Code – UTC-Zeitstempel + `MAX(LFDNR)` je Haupttabelle
+2. **Hauptbelege vollständig**: Verkauf, Lieferscheine, Einkauf, Produktion (Köpfe), Aus-/Eingangsrechnungen
+3. **Rückverfolgung + Produktionsdetails**: nur letzte 10 Jahre vor Cutover
+4. **Lagerbewegungen**: kein operativer Nachbau; max. 5-Jahresfenster falls Sonderblock beschlossen
+5. **Rechnungen**: ausschließlich schreibgeschützte Referenzbelege, kein `account.move`, keine OP
+6. **CRM-Historie**: 10-Jahresfenster (vorläufig)
+7. **Inaktive Artikel** (`INAKTIV<>0`): als archivierte Referenzartikel (`active=False`)
+8. **Gelöschte Artikel** (`LOESCHKNZ<>0`): ausgeschlossen; bei Stücklistenbedarf → Import bricht ab
+9. **Jeder Datensatz** erhält stabile External-ID (`eevolution.*`); fehlt sie → Import bricht ab
+
+**EK-Preis-Regel:** `ARTIKEL.DEKPR` (gleitender Durchschnitt) → `standard_price` (AVCO).
+`DEKPR ≤ 0` bleibt fachlicher Prüffall; `EKPR` nur mit expliziter Freigabe als Fallback.
+
+**External-ID-Schema:** `eevolution.partner_<ADRNR>`, `eevolution.product_<LFDNR>`,
+`eevolution.bom_<LFD_NR>`, `eevolution.sale_order_<LFDNR>` usw.
+
+---
+
 ### ✅ ABGESCHLOSSEN: Historische Verkaufsbelege (2026-09-16)
 
 | Kennzahl | Wert |
@@ -82,11 +104,31 @@ Dokumentation: `05_doku/HISTORISCHE_VERKAUFSBELEGE_KUF_ERP_ALL_DATA_20260916.md`
 
 ---
 
-### ▶ NÄCHSTE AUFGABE: Historische Einkaufsbelege
+### ▶ VERBLEIBENDER IMPORTSCOPE (nach 3D-Audit 16.09.2026)
 
-**Ziel:** Historische Einkaufsbelege aus eEvolution nach Odoo 19 importieren –
-analog zum Verkaufsbelegimport: gesperrt, idempotent, keine Lagerbewegungen,
-keine Buchungen, keine E-Mails.
+Gesamtgröße verbleibend: ~**1.145.356** zusätzliche Datensätze (ohne Produktionskomponenten: ~638.016).
+
+| Importblock | Köpfe | Positionen | Regel | Status |
+|---|---:|---:|---|---|
+| Lieferscheine | 29.483 | 107.928 | vollständig, gesperrt | ▶ offen |
+| Ausgangsrechnungen | 28.167 | 101.217 | Referenz, kein account.move | ▶ offen |
+| Eingangsrechnungen | 23.037 | 57.408 | Referenz, kein account.move | ▶ offen |
+| Alte Verkaufsbelege (vor 10 J.) | 23.821 | 104.244 | vollständig, gesperrt | ▶ offen |
+| Alte Einkaufsbelege (vor 10 J.) | 13.271 | 23.945 | vollständig, gesperrt | ▶ offen |
+| Produktionsaufträge (Köpfe) | 22.794 | – | vollständig | ▶ offen |
+| Produktionsdetails (10 J.) | – | 507.340 | 10-Jahresfenster | ▶ offen |
+| CRM-Nachimport (1 neue Chance) | 1 | 102.700 Hist. | 10-Jahresfenster | ▶ offen |
+| Bestände / Eröffnungssalden | – | – | erst zum Go-live | gesperrt |
+| Lagerplätze / Barcodes | – | – | fachliche Daten nötig | gesperrt |
+
+**Offener technischer Punkt:** Exakter UTC-Cutoff-Zeitstempel + `MAX(LFDNR)` je Haupttabelle noch festzulegen.
+
+---
+
+### ▶ NÄCHSTE AUFGABE: Historische Einkaufsbelege (Vollhistorie)
+
+**Ziel:** Alle historischen Einkaufsbelege aus eEvolution nach Odoo 19 importieren –
+gesperrt, idempotent, keine Lagerbewegungen, keine Buchungen, keine E-Mails.
 
 **Quelltabellen eEvolution:**
 
