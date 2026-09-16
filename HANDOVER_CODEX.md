@@ -1,5 +1,14 @@
 # Handover: Bitfarm-Importprogramm → Codex / KI-Prüfung
 
+> **External-ID-Namensraumaudit 17.09.2026:** Der rein lesende Audit auf
+> `kuf-erp-all-data` hat 1.034.598 Bindings geprüft: 1.034.488 `ev_*`-Kandidaten
+> in `__import__`, 110 separat zu behandelnde Nicht-`ev_*`-Bindings und noch
+> keine Bindings in `eevolution`. Ergebnis: 0 Zielkollisionen, 0 verwaiste
+> Bindings, 0 nicht prüfbare Modelle. Ein Namespace-Apply wurde nicht ausgeführt,
+> weil die Importer zunächst eine kontrollierte Übergangsauflösung benötigen.
+> Nachweis: `outputs/external_id_namespace_audit_20260917.json`; Zwischenbericht:
+> `05_doku/ZWISCHENBERICHT_ODOO_MIGRATION_20260917.md`.
+
 > **Probeimport abgeschlossen 16.09.2026:** Der vollständige freigegebene
 > Rehearsal-Import auf der neutralisierten Testdatenbank `kuf-erp-all-data` ist
 > abgeschlossen. Schluss-Gate: 0 ungesperrte historische Verkaufsbelege,

@@ -1,0 +1,877 @@
+{
+  "database": "kuf-erp-all-data",
+  "captured_at_local": "2026-09-17T00:24:39+02:00",
+  "mode": "read-only",
+  "source_module": "__import__",
+  "target_module": "eevolution",
+  "summary": {
+    "bindings_total": 1034598,
+    "source_bindings": 1034598,
+    "target_bindings": 0,
+    "source_only_ev_candidates": 1034488,
+    "source_only_non_ev_review": 110,
+    "target_only": 0,
+    "dual_namespace_same_record": 0,
+    "dual_namespace_conflicts": 0,
+    "orphaned_bindings": 0,
+    "unverifiable_models": 0,
+    "blockers": 0,
+    "safe_to_prepare_apply_plan": true
+  },
+  "counts_by_model": [
+    {
+      "module": "__import__",
+      "model": "account.account",
+      "count": 81
+    },
+    {
+      "module": "__import__",
+      "model": "account.payment.term",
+      "count": 34
+    },
+    {
+      "module": "__import__",
+      "model": "account.tax",
+      "count": 1
+    },
+    {
+      "module": "__import__",
+      "model": "crm.lead",
+      "count": 1365
+    },
+    {
+      "module": "__import__",
+      "model": "crm.stage",
+      "count": 10
+    },
+    {
+      "module": "__import__",
+      "model": "hr.employee",
+      "count": 34
+    },
+    {
+      "module": "__import__",
+      "model": "kf.legacy.business.document",
+      "count": 88390
+    },
+    {
+      "module": "__import__",
+      "model": "kf.legacy.business.document.line",
+      "count": 298685
+    },
+    {
+      "module": "__import__",
+      "model": "kf.legacy.production",
+      "count": 30586
+    },
+    {
+      "module": "__import__",
+      "model": "kf.legacy.purchase.document",
+      "count": 22033
+    },
+    {
+      "module": "__import__",
+      "model": "kf.legacy.purchase.document.line",
+      "count": 41986
+    },
+    {
+      "module": "__import__",
+      "model": "kf.legacy.sales.document",
+      "count": 20770
+    },
+    {
+      "module": "__import__",
+      "model": "kf.legacy.trace",
+      "count": 47860
+    },
+    {
+      "module": "__import__",
+      "model": "kf.legacy.trace.event",
+      "count": 312890
+    },
+    {
+      "module": "__import__",
+      "model": "mail.message",
+      "count": 84473
+    },
+    {
+      "module": "__import__",
+      "model": "mrp.bom",
+      "count": 1464
+    },
+    {
+      "module": "__import__",
+      "model": "mrp.bom.line",
+      "count": 21635
+    },
+    {
+      "module": "__import__",
+      "model": "mrp.eco.stage",
+      "count": 6
+    },
+    {
+      "module": "__import__",
+      "model": "mrp.eco.type",
+      "count": 1
+    },
+    {
+      "module": "__import__",
+      "model": "product.category",
+      "count": 30
+    },
+    {
+      "module": "__import__",
+      "model": "product.pricelist",
+      "count": 12
+    },
+    {
+      "module": "__import__",
+      "model": "product.pricelist.item",
+      "count": 1945
+    },
+    {
+      "module": "__import__",
+      "model": "product.supplierinfo",
+      "count": 5196
+    },
+    {
+      "module": "__import__",
+      "model": "product.template",
+      "count": 5971
+    },
+    {
+      "module": "__import__",
+      "model": "res.partner",
+      "count": 31884
+    },
+    {
+      "module": "__import__",
+      "model": "res.partner.category",
+      "count": 22
+    },
+    {
+      "module": "__import__",
+      "model": "res.users",
+      "count": 16
+    },
+    {
+      "module": "__import__",
+      "model": "sale.order",
+      "count": 17207
+    },
+    {
+      "module": "__import__",
+      "model": "stock.location",
+      "count": 8
+    },
+    {
+      "module": "__import__",
+      "model": "stock.warehouse",
+      "count": 1
+    },
+    {
+      "module": "__import__",
+      "model": "uom.uom",
+      "count": 2
+    }
+  ],
+  "counts_by_prefix": [
+    {
+      "module": "__import__",
+      "prefix": "NON_EV",
+      "count": 110
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_adr",
+      "count": 6021
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_ansprech",
+      "count": 9393
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_crm",
+      "count": 84473
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_crmstage",
+      "count": 10
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_employee",
+      "count": 32
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_kgrup",
+      "count": 20
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_kndlief",
+      "count": 3189
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_lager",
+      "count": 2
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_lagerfachgruppe",
+      "count": 1
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_lagergang",
+      "count": 1
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_lagerpl",
+      "count": 1
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_legacy",
+      "count": 863200
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_plitem",
+      "count": 1945
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_pricelist",
+      "count": 12
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_prodinhalt",
+      "count": 21635
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_prodlist",
+      "count": 1464
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_product",
+      "count": 5971
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_sale",
+      "count": 13281
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_serial",
+      "count": 17
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_supinfo",
+      "count": 5196
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_tag",
+      "count": 2
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_tax",
+      "count": 1
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_uom",
+      "count": 2
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_vkchance",
+      "count": 1365
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_vorgang",
+      "count": 17207
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_wgrup",
+      "count": 13
+    },
+    {
+      "module": "__import__",
+      "prefix": "ev_zbed",
+      "count": 34
+    }
+  ],
+  "dual_namespace_same_record": [],
+  "dual_namespace_conflicts": [],
+  "orphaned_bindings": [],
+  "unverifiable_models": [],
+  "source_only_non_ev_review": [
+    {
+      "name": "erp_test_1_user_10",
+      "model": "res.users",
+      "res_id": 10
+    },
+    {
+      "name": "erp_test_1_user_11",
+      "model": "res.users",
+      "res_id": 11
+    },
+    {
+      "name": "erp_test_1_user_12",
+      "model": "res.users",
+      "res_id": 12
+    },
+    {
+      "name": "erp_test_1_user_8",
+      "model": "res.users",
+      "res_id": 8
+    },
+    {
+      "name": "erp_test_1_user_9",
+      "model": "res.users",
+      "res_id": 9
+    },
+    {
+      "name": "kf_coa_account_100000",
+      "model": "account.account",
+      "res_id": 1283
+    },
+    {
+      "name": "kf_coa_account_121001",
+      "model": "account.account",
+      "res_id": 1284
+    },
+    {
+      "name": "kf_coa_account_121002",
+      "model": "account.account",
+      "res_id": 1285
+    },
+    {
+      "name": "kf_coa_account_121003",
+      "model": "account.account",
+      "res_id": 1286
+    },
+    {
+      "name": "kf_coa_account_123001",
+      "model": "account.account",
+      "res_id": 1287
+    },
+    {
+      "name": "kf_coa_account_123002",
+      "model": "account.account",
+      "res_id": 1288
+    },
+    {
+      "name": "kf_coa_account_123003",
+      "model": "account.account",
+      "res_id": 1289
+    },
+    {
+      "name": "kf_coa_account_125001",
+      "model": "account.account",
+      "res_id": 1290
+    },
+    {
+      "name": "kf_coa_account_125002",
+      "model": "account.account",
+      "res_id": 1291
+    },
+    {
+      "name": "kf_coa_account_125003",
+      "model": "account.account",
+      "res_id": 1292
+    },
+    {
+      "name": "kf_coa_account_136200",
+      "model": "account.account",
+      "res_id": 1293
+    },
+    {
+      "name": "kf_coa_account_150001",
+      "model": "account.account",
+      "res_id": 1294
+    },
+    {
+      "name": "kf_coa_account_153001",
+      "model": "account.account",
+      "res_id": 1295
+    },
+    {
+      "name": "kf_coa_account_154600",
+      "model": "account.account",
+      "res_id": 1296
+    },
+    {
+      "name": "kf_coa_account_161100",
+      "model": "account.account",
+      "res_id": 1297
+    },
+    {
+      "name": "kf_coa_account_166501",
+      "model": "account.account",
+      "res_id": 1298
+    },
+    {
+      "name": "kf_coa_account_166502",
+      "model": "account.account",
+      "res_id": 1299
+    },
+    {
+      "name": "kf_coa_account_166503",
+      "model": "account.account",
+      "res_id": 1300
+    },
+    {
+      "name": "kf_coa_account_170802",
+      "model": "account.account",
+      "res_id": 1301
+    },
+    {
+      "name": "kf_coa_account_170803",
+      "model": "account.account",
+      "res_id": 1302
+    },
+    {
+      "name": "kf_coa_account_170804",
+      "model": "account.account",
+      "res_id": 1303
+    },
+    {
+      "name": "kf_coa_account_170805",
+      "model": "account.account",
+      "res_id": 1304
+    },
+    {
+      "name": "kf_coa_account_32100",
+      "model": "account.account",
+      "res_id": 1305
+    },
+    {
+      "name": "kf_coa_account_32200",
+      "model": "account.account",
+      "res_id": 1306
+    },
+    {
+      "name": "kf_coa_account_33000",
+      "model": "account.account",
+      "res_id": 1307
+    },
+    {
+      "name": "kf_coa_account_340001",
+      "model": "account.account",
+      "res_id": 1308
+    },
+    {
+      "name": "kf_coa_account_340002",
+      "model": "account.account",
+      "res_id": 1309
+    },
+    {
+      "name": "kf_coa_account_340003",
+      "model": "account.account",
+      "res_id": 1310
+    },
+    {
+      "name": "kf_coa_account_340004",
+      "model": "account.account",
+      "res_id": 1311
+    },
+    {
+      "name": "kf_coa_account_340005",
+      "model": "account.account",
+      "res_id": 1312
+    },
+    {
+      "name": "kf_coa_account_340009",
+      "model": "account.account",
+      "res_id": 1313
+    },
+    {
+      "name": "kf_coa_account_340500",
+      "model": "account.account",
+      "res_id": 1314
+    },
+    {
+      "name": "kf_coa_account_340800",
+      "model": "account.account",
+      "res_id": 1315
+    },
+    {
+      "name": "kf_coa_account_342501",
+      "model": "account.account",
+      "res_id": 1316
+    },
+    {
+      "name": "kf_coa_account_342502",
+      "model": "account.account",
+      "res_id": 1317
+    },
+    {
+      "name": "kf_coa_account_342503",
+      "model": "account.account",
+      "res_id": 1318
+    },
+    {
+      "name": "kf_coa_account_342504",
+      "model": "account.account",
+      "res_id": 1319
+    },
+    {
+      "name": "kf_coa_account_342509",
+      "model": "account.account",
+      "res_id": 1320
+    },
+    {
+      "name": "kf_coa_account_380001",
+      "model": "account.account",
+      "res_id": 1321
+    },
+    {
+      "name": "kf_coa_account_380003",
+      "model": "account.account",
+      "res_id": 1322
+    },
+    {
+      "name": "kf_coa_account_380500",
+      "model": "account.account",
+      "res_id": 1323
+    },
+    {
+      "name": "kf_coa_account_390000",
+      "model": "account.account",
+      "res_id": 1324
+    },
+    {
+      "name": "kf_coa_account_390100",
+      "model": "account.account",
+      "res_id": 1325
+    },
+    {
+      "name": "kf_coa_account_390200",
+      "model": "account.account",
+      "res_id": 1326
+    },
+    {
+      "name": "kf_coa_account_390300",
+      "model": "account.account",
+      "res_id": 1327
+    },
+    {
+      "name": "kf_coa_account_390400",
+      "model": "account.account",
+      "res_id": 1328
+    },
+    {
+      "name": "kf_coa_account_390500",
+      "model": "account.account",
+      "res_id": 1329
+    },
+    {
+      "name": "kf_coa_account_392000",
+      "model": "account.account",
+      "res_id": 1330
+    },
+    {
+      "name": "kf_coa_account_41100",
+      "model": "account.account",
+      "res_id": 1331
+    },
+    {
+      "name": "kf_coa_account_41200",
+      "model": "account.account",
+      "res_id": 1332
+    },
+    {
+      "name": "kf_coa_account_41300",
+      "model": "account.account",
+      "res_id": 1333
+    },
+    {
+      "name": "kf_coa_account_41500",
+      "model": "account.account",
+      "res_id": 1334
+    },
+    {
+      "name": "kf_coa_account_41600",
+      "model": "account.account",
+      "res_id": 1335
+    },
+    {
+      "name": "kf_coa_account_41800",
+      "model": "account.account",
+      "res_id": 1336
+    },
+    {
+      "name": "kf_coa_account_439100",
+      "model": "account.account",
+      "res_id": 1337
+    },
+    {
+      "name": "kf_coa_account_45100",
+      "model": "account.account",
+      "res_id": 1338
+    },
+    {
+      "name": "kf_coa_account_45300",
+      "model": "account.account",
+      "res_id": 1339
+    },
+    {
+      "name": "kf_coa_account_457100",
+      "model": "account.account",
+      "res_id": 1340
+    },
+    {
+      "name": "kf_coa_account_460001",
+      "model": "account.account",
+      "res_id": 1341
+    },
+    {
+      "name": "kf_coa_account_460002",
+      "model": "account.account",
+      "res_id": 1342
+    },
+    {
+      "name": "kf_coa_account_461000",
+      "model": "account.account",
+      "res_id": 1343
+    },
+    {
+      "name": "kf_coa_account_461200",
+      "model": "account.account",
+      "res_id": 1344
+    },
+    {
+      "name": "kf_coa_account_461500",
+      "model": "account.account",
+      "res_id": 1345
+    },
+    {
+      "name": "kf_coa_account_461600",
+      "model": "account.account",
+      "res_id": 1346
+    },
+    {
+      "name": "kf_coa_account_461700",
+      "model": "account.account",
+      "res_id": 1347
+    },
+    {
+      "name": "kf_coa_account_473001",
+      "model": "account.account",
+      "res_id": 1348
+    },
+    {
+      "name": "kf_coa_account_478400",
+      "model": "account.account",
+      "res_id": 1349
+    },
+    {
+      "name": "kf_coa_account_480700",
+      "model": "account.account",
+      "res_id": 1350
+    },
+    {
+      "name": "kf_coa_account_65100",
+      "model": "account.account",
+      "res_id": 1351
+    },
+    {
+      "name": "kf_coa_account_65200",
+      "model": "account.account",
+      "res_id": 1352
+    },
+    {
+      "name": "kf_coa_account_65300",
+      "model": "account.account",
+      "res_id": 1353
+    },
+    {
+      "name": "kf_coa_account_80000",
+      "model": "account.account",
+      "res_id": 1354
+    },
+    {
+      "name": "kf_coa_account_840100",
+      "model": "account.account",
+      "res_id": 1355
+    },
+    {
+      "name": "kf_coa_account_840300",
+      "model": "account.account",
+      "res_id": 1356
+    },
+    {
+      "name": "kf_coa_account_840500",
+      "model": "account.account",
+      "res_id": 1357
+    },
+    {
+      "name": "kf_coa_account_840800",
+      "model": "account.account",
+      "res_id": 1358
+    },
+    {
+      "name": "kf_coa_account_841400",
+      "model": "account.account",
+      "res_id": 1359
+    },
+    {
+      "name": "kf_coa_account_85500",
+      "model": "account.account",
+      "res_id": 1360
+    },
+    {
+      "name": "kf_coa_account_86000",
+      "model": "account.account",
+      "res_id": 1361
+    },
+    {
+      "name": "kf_coa_account_98100",
+      "model": "account.account",
+      "res_id": 1362
+    },
+    {
+      "name": "kf_coa_account_996200",
+      "model": "account.account",
+      "res_id": 1363
+    },
+    {
+      "name": "kf_location_demoware",
+      "model": "stock.location",
+      "res_id": 18
+    },
+    {
+      "name": "kf_location_showroom",
+      "model": "stock.location",
+      "res_id": 19
+    },
+    {
+      "name": "kf_location_vida",
+      "model": "stock.location",
+      "res_id": 16
+    },
+    {
+      "name": "kf_plm_eco_type_bom",
+      "model": "mrp.eco.type",
+      "res_id": 2
+    },
+    {
+      "name": "kf_plm_stage_approved",
+      "model": "mrp.eco.stage",
+      "res_id": 8
+    },
+    {
+      "name": "kf_plm_stage_draft",
+      "model": "mrp.eco.stage",
+      "res_id": 5
+    },
+    {
+      "name": "kf_plm_stage_effective",
+      "model": "mrp.eco.stage",
+      "res_id": 9
+    },
+    {
+      "name": "kf_plm_stage_progress",
+      "model": "mrp.eco.stage",
+      "res_id": 6
+    },
+    {
+      "name": "kf_plm_stage_rejected",
+      "model": "mrp.eco.stage",
+      "res_id": 10
+    },
+    {
+      "name": "kf_plm_stage_review",
+      "model": "mrp.eco.stage",
+      "res_id": 7
+    },
+    {
+      "name": "kf_warehouse_hannover",
+      "model": "stock.warehouse",
+      "res_id": 1
+    },
+    {
+      "name": "kuf_erp_2_employee_1",
+      "model": "hr.employee",
+      "res_id": 1
+    },
+    {
+      "name": "kuf_erp_2_employee_34",
+      "model": "hr.employee",
+      "res_id": 34
+    },
+    {
+      "name": "kuf_erp_2_user_10",
+      "model": "res.users",
+      "res_id": 10
+    },
+    {
+      "name": "kuf_erp_2_user_11",
+      "model": "res.users",
+      "res_id": 11
+    },
+    {
+      "name": "kuf_erp_2_user_12",
+      "model": "res.users",
+      "res_id": 12
+    },
+    {
+      "name": "kuf_erp_2_user_13",
+      "model": "res.users",
+      "res_id": 13
+    },
+    {
+      "name": "kuf_erp_2_user_14",
+      "model": "res.users",
+      "res_id": 14
+    },
+    {
+      "name": "kuf_erp_2_user_2",
+      "model": "res.users",
+      "res_id": 2
+    },
+    {
+      "name": "kuf_erp_2_user_5",
+      "model": "res.users",
+      "res_id": 5
+    },
+    {
+      "name": "kuf_erp_2_user_6",
+      "model": "res.users",
+      "res_id": 6
+    },
+    {
+      "name": "kuf_erp_2_user_7",
+      "model": "res.users",
+      "res_id": 7
+    },
+    {
+      "name": "kuf_erp_2_user_8",
+      "model": "res.users",
+      "res_id": 8
+    },
+    {
+      "name": "kuf_erp_2_user_9",
+      "model": "res.users",
+      "res_id": 9
+    }
+  ],
+  "planned_next_step": "Apply-Skript mit exakter Bestandsliste, Backup-Guard, Kollisionsstopp, Read-back und Wiederholungs-Dry-run erstellen"
+}
