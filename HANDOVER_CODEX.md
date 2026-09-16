@@ -121,7 +121,13 @@ Gesamtgröße verbleibend: ~**1.145.356** zusätzliche Datensätze (ohne Produkt
 | Bestände / Eröffnungssalden | – | – | erst zum Go-live | gesperrt |
 | Lagerplätze / Barcodes | – | – | fachliche Daten nötig | gesperrt |
 
-**Offener technischer Punkt:** Exakter UTC-Cutoff-Zeitstempel + `MAX(LFDNR)` je Haupttabelle noch festzulegen.
+**Cutoff-Stichtag (festgelegt):** `2026-12-31T23:59:59` Serverzeit.
+Rehearsal-Lauf: wenige Tage vor Go-live mit dokumentierten `MAX(LFDNR)`-Obergrenzen je Haupttabelle.
+
+**Inventur:** Wird mit eEvolution durchgeführt (31.12.2026). Bestandsübernahme nach Odoo
+erfolgt aus dem eEvolution-Inventurabschluss – **nicht** aus rekonstruierten Lagerbewegungen.
+Skript `stock.quant`-Import liest `INVPOS`/`INVARTSERIE`/`INVARTCHARGE` nach Inventurabschluss.
+Lagerbewegungsblock (historisch) damit gegenstandslos.
 
 ---
 
